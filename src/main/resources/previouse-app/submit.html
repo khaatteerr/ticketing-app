@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HelpDesk Pro — Submit Ticket</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0f14; --bg2: #13161e; --bg3: #1a1e28;
+    --border: #252932; --text: #e8eaf0; --text2: #8b90a0; --text3: #545968;
+    --accent: #4f7cff; --accent2: #6b5bfc; --green: #22c55e; --red: #ef4444;
+    --yellow: #f59e0b; --purple: #a855f7;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 20px;
+    position: relative; overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(79,124,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,124,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none;
+  }
+  .blob { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.15; }
+  .blob1 { width: 500px; height: 500px; background: var(--accent); top: -150px; right: -150px; }
+
+  /* TOP BAR */
+  .topbar {
+    max-width: 700px; margin: 0 auto 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 10;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 16px; font-weight: 700; }
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 30px; padding: 6px 14px 6px 8px;
+    font-size: 13px;
+  }
+  .user-avatar-sm {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white;
+  }
+  .logout-link {
+    margin-left: 8px; font-size: 12px; color: var(--text3);
+    cursor: pointer; text-decoration: none;
+  }
+  .logout-link:hover { color: var(--red); }
+
+  /* MAIN CARD */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px;
+    max-width: 700px; margin: 0 auto;
+    position: relative; z-index: 10;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  .card-header { margin-bottom: 28px; }
+  .card-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .card-header p  { font-size: 13px; color: var(--text2); }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text2); margin-bottom: 7px;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 9px; padding: 11px 14px;
+    color: var(--text); font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; outline: none; resize: vertical;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,124,255,0.15);
+  }
+  .form-group input::placeholder,
+  .form-group textarea::placeholder { color: var(--text3); }
+  .form-group select option { background: var(--bg2); }
+  .char-count { font-size: 11px; color: var(--text3); text-align: right; margin-top: 4px; }
+
+  .status-display {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(79,124,255,0.12);
+    border: 1px solid rgba(79,124,255,0.25);
+    border-radius: 7px; padding: 9px 14px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    width: 100%;
+  }
+
+  .info-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .info-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 9px; padding: 12px 14px;
+    font-size: 12px;
+  }
+  .info-box .ib-label { color: var(--text3); margin-bottom: 3px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+  .info-box .ib-val   { color: var(--text); font-weight: 600; font-size: 13px; }
+
+  .submit-btn {
+    width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; border: none; border-radius: 9px;
+    padding: 14px; font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(79,124,255,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 8px;
+  }
+  .submit-btn:hover   { opacity: 0.92; transform: translateY(-1px); }
+  .submit-btn:active  { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SUCCESS SCREEN */
+  .success-screen {
+    text-align: center; padding: 20px; display: none;
+  }
+  .success-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(34,197,94,0.15); border: 2px solid rgba(34,197,94,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+    animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .success-screen h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .success-screen p  { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+  .ticket-ref {
+    display: inline-block; margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 18px;
+    color: var(--accent); background: rgba(79,124,255,0.1);
+    border: 1px solid rgba(79,124,255,0.25); border-radius: 8px;
+    padding: 10px 20px;
+  }
+  .submit-another-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; padding: 11px 20px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+    transition: border-color 0.15s;
+  }
+  .submit-another-btn:hover { border-color: var(--accent); }
+
+  /* MY TICKETS SECTION */
+  .my-tickets-section {
+    max-width: 700px; margin: 24px auto 0;
+    position: relative; z-index: 10;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-header h3 { font-size: 16px; font-weight: 700; }
+  .refresh-btn {
+    background: none; border: 1px solid var(--border); border-radius: 7px;
+    color: var(--text2); font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px; padding: 6px 12px; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+  .ticket-item {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    transition: border-color 0.15s;
+  }
+  .ticket-item:hover { border-color: rgba(79,124,255,0.3); }
+  .ti-id   { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); margin-bottom: 3px; }
+  .ti-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .ti-date  { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .badge {
+    padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .badge-open       { background: rgba(79,124,255,0.15);  color: var(--accent); }
+  .badge-inprogress { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-pending    { background: rgba(168,85,247,0.15);  color: var(--purple); }
+  .badge-resolved   { background: rgba(34,197,94,0.15);   color: var(--green); }
+  .badge-closed     { background: rgba(100,100,120,0.15); color: var(--text3); }
+
+  .empty-tickets {
+    text-align: center; padding: 30px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text3); font-size: 13px;
+  }
+
+  .error-bar {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--red);
+    margin-bottom: 16px; display: none;
+  }
+  .error-bar.show { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-icon">🎫</div>
+    <div class="logo-text">HelpDesk Pro</div>
+  </div>
+  <div class="user-pill">
+    <div class="user-avatar-sm" id="avatarSm">?</div>
+    <span id="userNameDisplay">Loading...</span>
+    <a class="logout-link" onclick="logout()">Logout</a>
+  </div>
+</div>
+
+<!-- SUBMIT CARD -->
+<div class="card">
+  <div class="card-header">
+    <h1>📨 Submit a Support Ticket</h1>
+    <p>Describe your issue and our team will get back to you as soon as possible.</p>
+  </div>
+
+  <!-- FORM -->
+  <div id="ticketForm">
+    <div class="error-bar" id="errorBar">
+      <span>⚠️</span><span id="errorText"></span>
+    </div>
+
+    <div class="info-row">
+      <div class="info-box">
+        <div class="ib-label">Submitted By</div>
+        <div class="ib-val" id="submittedByVal">—</div>
+      </div>
+      <div class="info-box">
+        <div class="ib-label">Status (auto-assigned)</div>
+        <div class="ib-val" style="color:var(--accent)">🔵 Open</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Issue Title *</label>
+      <input type="text" id="fTitle" placeholder="Brief description of your issue (e.g. 'Printer not working on 3rd floor')" maxlength="120"/>
+    </div>
+
+    <div class="form-group">
+      <label>Message / Description *</label>
+      <textarea id="fMessage" rows="5" placeholder="Describe the problem in detail. Include any error messages, when it started, and what you've already tried..." maxlength="2000" oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitTicket()">
+      <div class="spinner" id="spinner"></div>
+      <span id="submitText">🚀 Submit Ticket</span>
+    </button>
+  </div>
+
+  <!-- SUCCESS SCREEN -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <h2>Ticket Submitted!</h2>
+    <p>Your support request has been received.</p>
+    <p style="color:var(--text3)">Our team will respond as soon as possible.</p>
+    <div class="ticket-ref" id="ticketRef">TKT-2024-001</div>
+    <br/>
+    <button class="submit-another-btn" onclick="resetForm()">+ Submit Another Ticket</button>
+  </div>
+</div>
+
+<!-- MY TICKETS -->
+<div class="my-tickets-section">
+  <div class="section-header">
+    <h3>📋 My Tickets</h3>
+    <button class="refresh-btn" onclick="loadMyTickets()">↻ Refresh</button>
+  </div>
+  <div id="ticketList"><div class="empty-tickets">Loading your tickets...</div></div>
+</div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────
+  const API_BASE = 'https://192.168.180.34:6080';   // ← Change to your server IP
+  // ────────────────────────────────────────────────────
+
+  let token = localStorage.getItem('hd_token');
+  let user  = JSON.parse(localStorage.getItem('hd_user') || 'null');
+
+  // Auth guard
+  if (!token || !user) { window.location.href = 'login.html'; }
+
+  // Populate user info
+  document.getElementById('userNameDisplay').textContent = user.name;
+  document.getElementById('avatarSm').textContent        = user.name.charAt(0).toUpperCase();
+  document.getElementById('submittedByVal').textContent  = `${user.name} (@${user.username})`;
+
+  function logout() {
+    localStorage.removeItem('hd_token');
+    localStorage.removeItem('hd_user');
+    window.location.href = 'login.html';
+  }
+
+  function updateCharCount() {
+    const len = document.getElementById('fMessage').value.length;
+    document.getElementById('charCount').textContent = len;
+  }
+
+  function setLoading(on) {
+    document.getElementById('submitBtn').disabled = on;
+    document.getElementById('spinner').style.display = on ? 'block' : 'none';
+    document.getElementById('submitText').textContent = on ? 'Submitting...' : '🚀 Submit Ticket';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorBar');
+    document.getElementById('errorText').textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideError() { document.getElementById('errorBar').classList.remove('show'); }
+
+  async function submitTicket() {
+    hideError();
+    const title   = document.getElementById('fTitle').value.trim();
+    const message = document.getElementById('fMessage').value.trim();
+
+    if (!title)   { showError('Please enter an issue title'); return; }
+    if (!message) { showError('Please describe your issue'); return; }
+    if (title.length < 5) { showError('Title must be at least 5 characters'); return; }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, message, status: 'Open' })
+      });
+
+      if (res.status === 401) { logout(); return; }
+
+      const json = await res.json();
+      if (!json.success) { showError(json.message || 'Submission failed'); return; }
+
+      // Show success
+      document.getElementById('ticketRef').textContent = json.data.ticketId;
+      document.getElementById('ticketForm').style.display   = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      loadMyTickets();
+
+    } catch (err) {
+      showError('Cannot connect to server. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('fTitle').value   = '';
+    document.getElementById('fMessage').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('ticketForm').style.display    = 'block';
+    document.getElementById('successScreen').style.display = 'none';
+    hideError();
+  }
+
+  function statusBadge(s) {
+    const map = {
+      'Open':        'badge-open',
+      'In Progress': 'badge-inprogress',
+      'Pending':     'badge-pending',
+      'Resolved':    'badge-resolved',
+      'Closed':      'badge-closed'
+    };
+    return `<span class="badge ${map[s]||'badge-open'}">${s}</span>`;
+  }
+
+  function formatDate(ts) {
+    return new Date(ts).toLocaleString('en-US', {
+      month:'short', day:'2-digit', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+  }
+
+  async function loadMyTickets() {
+    const el = document.getElementById('ticketList');
+    el.innerHTML = '<div class="empty-tickets">Loading...</div>';
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) { logout(); return; }
+      const json = await res.json();
+      const list = json.data || [];
+
+      if (!list.length) {
+        el.innerHTML = '<div class="empty-tickets">You haven\'t submitted any tickets yet.</div>';
+        return;
+      }
+
+      el.innerHTML = `<div class="ticket-list">${
+        list.map(t => `
+          <div class="ticket-item">
+            <div>
+              <div class="ti-id">${t.ticketId}</div>
+              <div class="ti-title">${esc(t.title)}</div>
+              <div class="ti-date">${formatDate(t.createdAt)}</div>
+            </div>
+            <div style="flex-shrink:0">${statusBadge(t.status)}</div>
+          </div>`).join('')
+      }</div>`;
+
+    } catch (err) {
+      el.innerHTML = '<div class="empty-tickets">Failed to load tickets. Check your connection.</div>';
+    }
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Initial load
+  loadMyTickets();
+</script>
+</body>
+</html>

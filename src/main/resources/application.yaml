@@ -1,0 +1,18 @@
+ktor:
+  deployment:
+    port: 6080
+
+  application:
+    modules:
+      - com.helpdesk.ApplicationKt.module
+
+jwt:
+  secret: "helpdesk-super-secret-jwt-key-change-in-production"
+  issuer: "helpdesk"
+  audience: "helpdesk-users"
+  realm: "HelpDesk Pro"
+  expirationHours: 24
+
+mongodb:
+  connectionString: "mongodb+srv://ahmederaqi252_db_user:Vo16bylNaLItbPQU@cluster0.a6klah9.mongodb.net/?appName=Cluster0"
+  database: "helpdesk"
