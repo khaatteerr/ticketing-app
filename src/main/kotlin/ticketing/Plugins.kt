@@ -1,4 +1,4 @@
-package com.helpdesk.plugins
+package com.eraqi.ticketing
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -9,7 +9,6 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
-import com.helpdesk.models.ApiResponse
 import io.ktor.server.plugins.calllogging.CallLogging
 
 fun Application.configureSerialization() {

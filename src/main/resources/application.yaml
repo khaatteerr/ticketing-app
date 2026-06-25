@@ -4,7 +4,7 @@ ktor:
 
   application:
     modules:
-      - com.helpdesk.ApplicationKt.module
+      - com.eraqi.MainKt.module
 
 jwt:
   secret: "helpdesk-super-secret-jwt-key-change-in-production"

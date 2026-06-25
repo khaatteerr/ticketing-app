@@ -1,10 +1,5 @@
-package com.helpdesk.plugins
+package com.eraqi.ticketing
 
-import com.helpdesk.models.ApiResponse
-import com.helpdesk.routes.authRoutes
-import com.helpdesk.routes.categoryRoutes
-import com.helpdesk.routes.ticketRoutes
-import com.helpdesk.routes.userRoutes
 import io.ktor.server.application.*
 import io.ktor.server.http.content.defaultResource
 import io.ktor.server.http.content.resources
@@ -16,7 +11,7 @@ fun Application.configureRouting() {
     routing {
         // Health check
         static("/") {
-            resources("previouse-app")
+            resources("ticketing")
             defaultResource("login.html") // Fallback to login.html if no specific file is requested
         }
 

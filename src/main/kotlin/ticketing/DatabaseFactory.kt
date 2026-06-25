@@ -1,9 +1,7 @@
-package com.helpdesk.database
+package com.eraqi.ticketing
 
-import com.helpdesk.models.Category
-import com.helpdesk.models.Ticket
-import com.helpdesk.models.User
 import io.ktor.server.config.*
+import kotlinx.coroutines.runBlocking
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.coroutine.coroutine
@@ -22,7 +20,7 @@ object DatabaseFactory {
 
     fun init(config: ApplicationConfig) {
         val connectionString = config.tryGetString("mongodb.connectionString")
-            ?: "mongodb://localhost:27017"
+            ?: "mongodb+srv://ahmederaqi252_db_user:Vo16bylNaLItbPQU@cluster0.a6klah9.mongodb.net/?appName=Cluster0"
         val dbName = config.tryGetString("mongodb.database") ?: "helpdesk"
 
         logger.info("Connecting to MongoDB at $connectionString, database: $dbName")
@@ -37,7 +35,7 @@ object DatabaseFactory {
         logger.info("MongoDB connected successfully")
 
         // Seed default categories and admin user
-        kotlinx.coroutines.runBlocking {
+        runBlocking {
             seedDefaults()
         }
     }

@@ -1,6 +1,5 @@
-package com.helpdesk.plugins
+package com.eraqi.ticketing
 
-import com.helpdesk.utils.JwtConfig
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*

@@ -1,13 +1,12 @@
 package com.eraqi
 
-import com.helpdesk.database.DatabaseFactory
-import com.helpdesk.plugins.configureCORS
-import com.helpdesk.plugins.configureCallLogging
-import com.helpdesk.plugins.configureRouting
-import com.helpdesk.plugins.configureSecurity
-import com.helpdesk.plugins.configureSerialization
-import com.helpdesk.plugins.configureStatusPages
-import io.ktor.server.engine.*
+import com.eraqi.ticketing.DatabaseFactory
+import com.eraqi.ticketing.configureCORS
+import com.eraqi.ticketing.configureCallLogging
+import com.eraqi.ticketing.configureRouting
+import com.eraqi.ticketing.configureSecurity
+import com.eraqi.ticketing.configureSerialization
+import com.eraqi.ticketing.configureStatusPages
 import io.ktor.server.application.*
 import io.ktor.server.netty.EngineMain
 

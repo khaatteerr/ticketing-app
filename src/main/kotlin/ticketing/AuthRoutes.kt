@@ -1,13 +1,7 @@
-package com.helpdesk.routes
+package com.eraqi.ticketing
 
-import com.helpdesk.database.DatabaseFactory.users
-import com.helpdesk.models.ApiResponse
-import com.helpdesk.models.LoginRequest
-import com.helpdesk.models.LoginResponse
-import com.helpdesk.models.toPublic
-import com.helpdesk.utils.JwtConfig
+import com.eraqi.ticketing.DatabaseFactory.users
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -30,7 +24,7 @@ fun Route.authRoutes() {
                 return@post
             }
 
-            val user = users.findOne(com.helpdesk.models.User::username eq body.username)
+            val user = users.findOne(User::username eq body.username)
 
             if (user == null || !user.active) {
                 call.respond(

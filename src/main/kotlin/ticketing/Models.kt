@@ -1,4 +1,4 @@
-package com.helpdesk.models
+package com.eraqi.ticketing
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName

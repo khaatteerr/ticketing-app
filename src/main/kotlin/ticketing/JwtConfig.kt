@@ -1,10 +1,9 @@
-package com.helpdesk.utils
+package com.eraqi.ticketing
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.helpdesk.models.User
-import io.ktor.server.application.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.config.tryGetString
 import java.util.*
 
@@ -14,7 +13,7 @@ object JwtConfig {
     private lateinit var audience: String
     private var expirationHours: Long = 24
 
-    fun init(config: io.ktor.server.config.ApplicationConfig) {
+    fun init(config: ApplicationConfig) {
         secret          = config.tryGetString("jwt.secret")           ?: "default-secret"
         issuer          = config.tryGetString("jwt.issuer")           ?: "helpdesk"
         audience        = config.tryGetString("jwt.audience")         ?: "helpdesk-users"

@@ -3,19 +3,21 @@ plugins {
     alias(ktorLibs.plugins.ktor)
     kotlin("plugin.serialization") version "1.9.23"
     application
+    id("com.gradleup.shadow") version "9.1.0"
 }
 
 group = "com.eraqi"
 version = "1.0.0-SNAPSHOT"
 
-application {
-    mainClass = "io.ktor.server.netty.EngineMain"
-}
 
 kotlin {
     jvmToolchain(21)
 }
 
+application {
+    mainClass.set("io.ktor.server.netty.EngineMain")
+    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
+}
 val ktor_version = "2.3.10"
 val kotlin_version = "1.9.23"
 val logback_version = "1.4.14"
@@ -59,4 +61,16 @@ dependencies {
     // Kotlinx
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+}
+tasks {
+    shadowJar {
+        archiveFileName.set("ticketing.jar")
+        manifest {
+            attributes["Main-Class"] = "io.ktor.server.netty.EngineMain"
+        }
+        mergeServiceFiles() // important for Ktor service discovery
+    }
+}
+repositories {
+    mavenCentral()
 }

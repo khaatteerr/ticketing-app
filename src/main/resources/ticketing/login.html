@@ -217,7 +217,7 @@
 <script>
   // ── CONFIG ──────────────────────────────────────────
   // Change this to your server IP:  e.g. http://192.168.1.50:8080
-  const API_BASE = 'https://192.168.180.34:6080';
+  const API_BASE = 'http://192.168.180.43:6080';
 
   document.getElementById('apiUrlDisplay').textContent = API_BASE;
 
@@ -253,10 +253,9 @@
     const password = document.getElementById('password').value;
 
     if (!username || !password) { showError('Please enter username and password'); return; }
-
-    setLoading(true);
+     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -281,7 +280,8 @@
       }
 
     } catch (err) {
-      showError('Cannot connect to server. Check API_BASE in this file.');
+      //showError('Cannot connect to server. Check API_BASE in this file.');
+      showError(err)
       console.error(err);
     } finally {
       setLoading(false);

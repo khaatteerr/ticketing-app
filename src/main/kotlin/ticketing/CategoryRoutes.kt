@@ -1,10 +1,7 @@
-package com.helpdesk.routes
+package com.eraqi.ticketing
 
-import com.helpdesk.database.DatabaseFactory.categories
-import com.helpdesk.models.*
-import com.helpdesk.utils.role
+import com.eraqi.ticketing.DatabaseFactory.categories
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*

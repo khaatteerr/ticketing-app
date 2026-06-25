@@ -1,11 +1,7 @@
-package com.helpdesk.routes
+package com.eraqi.ticketing
 
-import com.helpdesk.database.DatabaseFactory.users
-import com.helpdesk.models.*
-import com.helpdesk.utils.role
-import com.helpdesk.utils.userId
+import com.eraqi.ticketing.DatabaseFactory.users
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
@@ -25,7 +21,9 @@ fun Route.userRoutes() {
             get {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden, ApiResponse<Unit>(success = false, message = "Admin access required"))
+                    call.respond(HttpStatusCode.Forbidden,
+                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                    )
                     return@get
                 }
                 val all = users.find().toList().map { it.toPublic() }
@@ -38,7 +36,9 @@ fun Route.userRoutes() {
                 val id = ObjectId(principal.userId())
                 val user = users.findOneById(id)
                 if (user == null) {
-                    call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, message = "User not found"))
+                    call.respond(HttpStatusCode.NotFound,
+                        ApiResponse<Unit>(success = false, message = "User not found")
+                    )
                     return@get
                 }
                 call.respond(ApiResponse(success = true, data = user.toPublic()))
@@ -48,25 +48,36 @@ fun Route.userRoutes() {
             post {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden, ApiResponse<Unit>(success = false, message = "Admin access required"))
+                    call.respond(HttpStatusCode.Forbidden,
+                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                    )
                     return@post
                 }
                 val body = call.receive<CreateUserRequest>()
 
                 if (body.username.isBlank() || body.password.isBlank() || body.name.isBlank()) {
-                    call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Username, name and password are required"))
+                    call.respond(HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, message = "Username, name and password are required")
+                    )
                     return@post
                 }
 
                 val existing = users.findOne(User::username eq body.username)
                 if (existing != null) {
-                    call.respond(HttpStatusCode.Conflict, ApiResponse<Unit>(success = false, message = "Username already exists"))
+                    call.respond(HttpStatusCode.Conflict,
+                        ApiResponse<Unit>(success = false, message = "Username already exists")
+                    )
                     return@post
                 }
 
                 val validRoles = listOf("Admin", "User", "Support Agent")
                 if (body.role !in validRoles) {
-                    call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid role. Use: ${validRoles.joinToString(", ")}"))
+                    call.respond(HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(
+                            success = false,
+                            message = "Invalid role. Use: ${validRoles.joinToString(", ")}"
+                        )
+                    )
                     return@post
                 }
 
@@ -77,20 +88,26 @@ fun Route.userRoutes() {
                     role = body.role
                 )
                 users.insertOne(user)
-                call.respond(HttpStatusCode.Created, ApiResponse(success = true, message = "User created", data = user.toPublic()))
+                call.respond(HttpStatusCode.Created,
+                    ApiResponse(success = true, message = "User created", data = user.toPublic())
+                )
             }
 
             // GET /api/users/{id}
             get("/{id}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden, ApiResponse<Unit>(success = false, message = "Admin access required"))
+                    call.respond(HttpStatusCode.Forbidden,
+                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                    )
                     return@get
                 }
                 val id = call.parameters["id"] ?: return@get
                 runCatching { ObjectId(id) }.getOrNull()?.let { oid ->
                     val user = users.findOneById(oid)
-                    if (user == null) call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, message = "User not found"))
+                    if (user == null) call.respond(HttpStatusCode.NotFound,
+                        ApiResponse<Unit>(success = false, message = "User not found")
+                    )
                     else call.respond(ApiResponse(success = true, data = user.toPublic()))
                 } ?: call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid ID"))
             }
@@ -99,16 +116,22 @@ fun Route.userRoutes() {
             put("/{id}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden, ApiResponse<Unit>(success = false, message = "Admin access required"))
+                    call.respond(HttpStatusCode.Forbidden,
+                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                    )
                     return@put
                 }
                 val id = call.parameters["id"] ?: return@put
                 val oid = runCatching { ObjectId(id) }.getOrNull()
-                    ?: run { call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid ID")); return@put }
+                    ?: run { call.respond(HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, message = "Invalid ID")
+                    ); return@put }
 
                 val body = call.receive<UpdateUserRequest>()
                 val user = users.findOneById(oid)
-                    ?: run { call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, message = "User not found")); return@put }
+                    ?: run { call.respond(HttpStatusCode.NotFound,
+                        ApiResponse<Unit>(success = false, message = "User not found")
+                    ); return@put }
 
                 body.name?.let     { users.updateOneById(oid, setValue(User::name,   it.trim())) }
                 body.role?.let     { users.updateOneById(oid, setValue(User::role,   it)) }
@@ -123,20 +146,28 @@ fun Route.userRoutes() {
             delete("/{id}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden, ApiResponse<Unit>(success = false, message = "Admin access required"))
+                    call.respond(HttpStatusCode.Forbidden,
+                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                    )
                     return@delete
                 }
                 val id = call.parameters["id"] ?: return@delete
                 if (id == principal.userId()) {
-                    call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Cannot delete your own account"))
+                    call.respond(HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, message = "Cannot delete your own account")
+                    )
                     return@delete
                 }
                 val oid = runCatching { ObjectId(id) }.getOrNull()
-                    ?: run { call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid ID")); return@delete }
+                    ?: run { call.respond(HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, message = "Invalid ID")
+                    ); return@delete }
 
                 val result = users.deleteOneById(oid)
                 if (result.deletedCount == 0L)
-                    call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, message = "User not found"))
+                    call.respond(HttpStatusCode.NotFound,
+                        ApiResponse<Unit>(success = false, message = "User not found")
+                    )
                 else
                     call.respond(ApiResponse<Unit>(success = true, message = "User deleted"))
             }
