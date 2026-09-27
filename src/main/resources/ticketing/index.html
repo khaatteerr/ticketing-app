@@ -1,191 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>HelpDesk Pro — Admin Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e28;--border:#252932;
-    --text:#e8eaf0;--text2:#8b90a0;--text3:#545968;
-    --accent:#4f7cff;--accent2:#6b5bfc;--green:#22c55e;
-    --yellow:#f59e0b;--red:#ef4444;--purple:#a855f7;--cyan:#06b6d4;
-    --card-shadow:0 2px 16px rgba(0,0,0,0.4);--radius:10px;--sidebar-w:220px;
-  }
-  [data-theme="light"]{--bg:#f0f2f8;--bg2:#ffffff;--bg3:#e8eaf2;--border:#d4d8e8;--text:#1a1e2e;--text2:#4a5070;--text3:#8890aa;--card-shadow:0 2px 16px rgba(0,0,0,0.08);}
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;transition:background .3s,color .3s;}
-
-  /* SIDEBAR */
-  #sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:background .3s,border-color .3s;}
-  .sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-  .sidebar-logo .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-  .sidebar-logo .logo-text{font-weight:700;font-size:15px;line-height:1.2;}
-  .sidebar-logo .logo-sub{font-size:10px;color:var(--text3);}
-  .user-card{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-  .user-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;flex-shrink:0;}
-  .user-name{font-weight:600;font-size:13px;}
-  .user-role{font-size:10px;color:var(--accent);background:rgba(79,124,255,.12);padding:1px 7px;border-radius:20px;display:inline-block;margin-top:2px;}
-  nav{flex:1;padding:12px 10px;}
-  .nav-section{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 10px 4px;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--text2);font-weight:500;font-size:13px;transition:background .15s,color .15s;margin-bottom:2px;}
-  .nav-item:hover{background:var(--bg3);color:var(--text);}
-  .nav-item.active{background:rgba(79,124,255,.15);color:var(--accent);}
-  .nav-item .ni{font-size:16px;width:20px;text-align:center;}
-  .nav-item .badge{margin-left:auto;background:var(--accent);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;}
-  .sidebar-bottom{padding:12px 10px;border-top:1px solid var(--border);}
-  .theme-toggle{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:background .15s;}
-  .theme-toggle:hover{background:var(--bg3);color:var(--text);}
-  .logout-btn{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--red);font-size:13px;font-weight:500;transition:background .15s;margin-top:4px;}
-  .logout-btn:hover{background:rgba(239,68,68,.1);}
-
-  /* MAIN */
-  #main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
-  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
-  .topbar-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
-  .topbar-title span{color:var(--text3);font-size:14px;}
-  .page-content{padding:24px 28px;}
-  .page{display:none;}
-  .page.active{display:block;}
-
-  /* STAT CARDS */
-  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
-  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color .15s,background .15s,transform .1s;}
-  .stat-card:hover{border-color:var(--accent);transform:translateY(-1px);}
-  .stat-card.active{border-color:var(--accent);background:rgba(79,124,255,.07);}
-  .stat-card .sc-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:500;}
-  .stat-card .sc-count{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;}
-  .stat-card[data-status="all"] .sc-count{color:var(--text);}
-  .stat-card[data-status="Open"] .sc-count{color:var(--accent);}
-  .stat-card[data-status="In Progress"] .sc-count{color:var(--yellow);}
-  .stat-card[data-status="Pending"] .sc-count{color:var(--purple);}
-  .stat-card[data-status="Resolved"] .sc-count{color:var(--green);}
-  .stat-card[data-status="Closed"] .sc-count{color:var(--text3);}
-
-  /* TOOLBAR */
-  .toolbar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;}
-  .toolbar-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:12px;}
-  .filters-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;}
-  .filter-group label{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:600;}
-  .filter-group input,.filter-group select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:border-color .15s;-webkit-appearance:none;}
-  .filter-group input:focus,.filter-group select:focus{border-color:var(--accent);}
-  .filter-group select option{background:var(--bg2);}
-
-  /* TABLE */
-  .table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-  .table-topbar{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-  .table-topbar h3{font-size:15px;font-weight:600;}
-  .table-actions{display:flex;gap:8px;align-items:center;}
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;border:none;transition:all .15s;}
-  .btn-primary{background:var(--accent);color:white;}
-  .btn-primary:hover{background:#3d6bee;}
-  .btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
-  .btn-ghost:hover{color:var(--text);border-color:var(--accent);}
-  .btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2);}
-  .btn-danger:hover{background:rgba(239,68,68,.2);}
-  .btn-sm{padding:5px 10px;font-size:12px;}
-  table{width:100%;border-collapse:collapse;}
-  thead th{padding:11px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
-  tbody tr{transition:background .1s;border-bottom:1px solid var(--border);}
-  tbody tr:last-child{border-bottom:none;}
-  tbody tr:hover{background:var(--bg3);}
-  td{padding:12px 16px;font-size:13px;vertical-align:middle;}
-  .ticket-id{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:500;}
-  .ticket-title{font-weight:500;color:var(--text);max-width:260px;}
-  .category-tag{font-size:12px;color:var(--cyan);font-weight:500;}
-  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-  .badge-urgent{background:rgba(239,68,68,.15);color:var(--red);}
-  .badge-high{background:rgba(245,158,11,.15);color:#f97316;}
-  .badge-medium{background:rgba(79,124,255,.15);color:var(--accent);}
-  .badge-low{background:rgba(34,197,94,.15);color:var(--green);}
-  .badge-open{background:rgba(79,124,255,.15);color:var(--accent);}
-  .badge-inprogress{background:rgba(245,158,11,.15);color:var(--yellow);}
-  .badge-pending{background:rgba(168,85,247,.15);color:var(--purple);}
-  .badge-resolved{background:rgba(34,197,94,.15);color:var(--green);}
-  .badge-closed{background:rgba(100,100,120,.15);color:var(--text3);}
-  .badge-admin{background:rgba(239,68,68,.12);color:var(--red);}
-  .badge-support{background:rgba(79,124,255,.12);color:var(--accent);}
-  .badge-user{background:rgba(34,197,94,.12);color:var(--green);}
-  .actions-cell{display:flex;gap:6px;}
-  .icon-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;color:var(--text2);}
-  .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .icon-btn.del:hover{border-color:var(--red);color:var(--red);}
-  .table-footer{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);font-size:12px;color:var(--text3);}
-  .pagination{display:flex;gap:4px;}
-  .page-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s;}
-  .page-btn:hover,.page-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
-  .entries-select{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;}
-
-  /* MODAL */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(3px);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
-  .modal-overlay.open{opacity:1;pointer-events:all;}
-  .modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;padding:28px;max-height:90vh;overflow-y:auto;transform:translateY(20px);transition:transform .2s;position:relative;}
-  .modal-overlay.open .modal{transform:translateY(0);}
-  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
-  .modal-header h2{font-size:18px;font-weight:700;}
-  .modal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);transition:all .15s;}
-  .modal-close:hover{border-color:var(--red);color:var(--red);}
-  .form-grid{display:grid;gap:16px;}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .form-group{display:flex;flex-direction:column;gap:6px;}
-  .form-group label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
-  .form-group input,.form-group select,.form-group textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical;-webkit-appearance:none;}
-  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
-  .form-group select option{background:var(--bg2);}
-  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:22px;}
-
-  /* DEPT */
-  .dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-  .dept-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:border-color .15s;}
-  .dept-card:hover{border-color:var(--accent);}
-  .dept-icon{font-size:28px;margin-bottom:10px;}
-  .dept-name{font-size:15px;font-weight:700;margin-bottom:4px;}
-  .dept-count{font-size:12px;color:var(--text3);}
-  .dept-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:12px;overflow:hidden;}
-  .dept-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease;}
-  .dept-actions{display:flex;gap:6px;margin-top:12px;}
-
-  /* TOAST */
-  #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
-  .toast{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;min-width:240px;box-shadow:var(--card-shadow);animation:slideUp .3s ease;}
-  .toast.success{border-left:3px solid var(--green);}
-  .toast.error{border-left:3px solid var(--red);}
-  .toast.info{border-left:3px solid var(--accent);}
-  @keyframes slideUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-
-  /* LOG */
-  .log-list{display:flex;flex-direction:column;}
-  .log-item{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
-  .log-item:last-child{border-bottom:none;}
-  .log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
-  .log-msg{font-size:13px;color:var(--text);}
-  .log-time{font-size:11px;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
-
-  /* LOADING OVERLAY */
-  .loading-overlay{position:fixed;inset:0;background:rgba(13,15,20,.8);z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
-  .loading-overlay .spinner{width:40px;height:40px;border:3px solid rgba(79,124,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
-  .loading-overlay p{font-size:14px;color:var(--text2);}
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  .empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
-  .empty-state .es-icon{font-size:40px;margin-bottom:12px;}
-  .create-ticket-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border:none;padding:9px 18px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;box-shadow:0 2px 12px rgba(79,124,255,.3);}
-  .create-ticket-btn:hover{opacity:.92;transform:translateY(-1px);}
-  .api-status{display:flex;align-items:center;gap:6px;font-size:12px;font-family:'JetBrains Mono',monospace;}
-  .api-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
-  .api-dot.online{background:var(--green);}
-  .api-dot.offline{background:var(--red);}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HelpDesk Pro — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+<link rel="stylesheet" href="css/replies.css"/>
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <aside id="sidebar">
-  <div class="sidebar-logo">
+  <a href="index.html" class="sidebar-logo">
     <div class="logo-icon">🎫</div>
-    <div><div class="logo-text">HelpDesk Pro</div><div class="logo-sub">Admin Dashboard</div></div>
-  </div>
+    <div>
+      <div class="logo-text">HelpDesk Pro</div>
+      <div class="logo-sub">Admin Portal</div>
+    </div>
+  </a>
   <div class="user-card">
     <div class="user-avatar" id="avatarInitial">A</div>
     <div>
@@ -195,12 +28,14 @@
   </div>
   <nav>
     <div class="nav-section">Menu</div>
-    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="ni">🏠</span> Dashboard</div>
-    <div class="nav-item" onclick="showPage('users',this)"><span class="ni">👥</span> Users</div>
-    <div class="nav-item" onclick="showPage('departments',this)"><span class="ni">🏢</span> Departments</div>
+    <a href="index.html" class="nav-item active" data-page="dashboard"><span class="ni">🏠</span> Dashboard</a>
+    <a href="users.html" class="nav-item" data-page="users"><span class="ni">👥</span> Users</a>
+    <a href="departments.html" class="nav-item" data-page="departments"><span class="ni">🏢</span> Departments</a>
+    <a href="issues.html" class="nav-item" data-page="issues"><span class="ni">🎯</span> Issues</a>
+    <a href="sync.html" class="nav-item" data-page="sync"><span class="ni">⚡</span> AD Sync</a>
     <div class="nav-section">Personal</div>
-    <div class="nav-item" onclick="showPage('logs',this)"><span class="ni">📋</span> Activity Logs</div>
-    <div class="nav-item" onclick="showPage('account',this)"><span class="ni">👤</span> My Account</div>
+    <a href="logs.html" class="nav-item" data-page="logs"><span class="ni">📋</span> Activity Logs</a>
+    <a href="account.html" class="nav-item" data-page="account"><span class="ni">👤</span> My Account</a>
   </nav>
   <div class="sidebar-bottom">
     <div class="theme-toggle" onclick="toggleTheme()">
@@ -213,7 +48,7 @@
 <!-- MAIN -->
 <div id="main">
   <div class="topbar">
-    <div class="topbar-title" id="pageTitle">🏠 Dashboard <span>/ Overview</span></div>
+    <div class="topbar-title">🏠 Dashboard <span>/ Tickets Overview</span></div>
     <div style="display:flex;align-items:center;gap:16px;">
       <div class="api-status">
         <div class="api-dot" id="apiDot"></div>
@@ -224,710 +59,262 @@
   </div>
 
   <div class="page-content">
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="stat-card active" data-status="all"         onclick="filterByStatus('all',this)"><div class="sc-label">📋 All</div><div class="sc-count" id="cnt-all">0</div></div>
+      <div class="stat-card"        data-status="Open"        onclick="filterByStatus('Open',this)"><div class="sc-label">🔵 Open</div><div class="sc-count" id="cnt-open">0</div></div>
+      <div class="stat-card"        data-status="In Progress" onclick="filterByStatus('In Progress',this)"><div class="sc-label">🟡 In Progress</div><div class="sc-count" id="cnt-inprogress">0</div></div>
+      <div class="stat-card"        data-status="Pending"     onclick="filterByStatus('Pending',this)"><div class="sc-label">🟣 Pending</div><div class="sc-count" id="cnt-pending">0</div></div>
+      <div class="stat-card"        data-status="Resolved"    onclick="filterByStatus('Resolved',this)"><div class="sc-label">🟢 Resolved</div><div class="sc-count" id="cnt-resolved">0</div></div>
+      <div class="stat-card"        data-status="Closed"      onclick="filterByStatus('Closed',this)"><div class="sc-label">⚫ Closed</div><div class="sc-count" id="cnt-closed">0</div></div>
+    </div>
 
-    <!-- DASHBOARD PAGE -->
-    <div class="page active" id="page-dashboard">
-      <div class="stats-row">
-        <div class="stat-card active" data-status="all"         onclick="filterByStatus('all',this)"><div class="sc-label">📋 All</div><div class="sc-count" id="cnt-all">0</div></div>
-        <div class="stat-card"        data-status="Open"        onclick="filterByStatus('Open',this)"><div class="sc-label">🔵 Open</div><div class="sc-count" id="cnt-open">0</div></div>
-        <div class="stat-card"        data-status="In Progress" onclick="filterByStatus('In Progress',this)"><div class="sc-label">🟡 In Progress</div><div class="sc-count" id="cnt-inprogress">0</div></div>
-        <div class="stat-card"        data-status="Pending"     onclick="filterByStatus('Pending',this)"><div class="sc-label">🟣 Pending</div><div class="sc-count" id="cnt-pending">0</div></div>
-        <div class="stat-card"        data-status="Resolved"    onclick="filterByStatus('Resolved',this)"><div class="sc-label">🟢 Resolved</div><div class="sc-count" id="cnt-resolved">0</div></div>
-        <div class="stat-card"        data-status="Closed"      onclick="filterByStatus('Closed',this)"><div class="sc-label">⚫ Closed</div><div class="sc-count" id="cnt-closed">0</div></div>
-      </div>
-      <div class="toolbar">
-        <div class="toolbar-title">🔍 Additional Filters</div>
-        <div class="filters-row">
-          <div class="filter-group"><label>Search</label><input type="text" id="searchInput" placeholder="Search tickets..." oninput="renderTable()"/></div>
-          <div class="filter-group"><label>Priority</label><select id="filterPriority" onchange="renderTable()"><option value="">All Priorities</option><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-          <div class="filter-group"><label>Category</label><select id="filterCategory" onchange="renderTable()"><option value="">All Categories</option></select></div>
-          <div class="filter-group"><label>Assigned To</label><select id="filterAssigned" onchange="renderTable()"><option value="">All</option></select></div>
+    <!-- TOOLBAR & FILTERS -->
+    <div class="toolbar">
+      <div class="toolbar-title">🔍 Ticket Filters</div>
+      <div class="filters-row">
+        <div class="filter-group">
+          <label>Search</label>
+          <input type="text" id="searchInput" placeholder="Search ticket ID, title, user, department..." oninput="renderTable()"/>
         </div>
-      </div>
-      <div class="table-card">
-        <div class="table-topbar">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <h3>🎫 Tickets</h3>
-            <span style="font-size:12px;color:var(--text3)">Show <select class="entries-select" id="entriesCount" onchange="renderTable()"><option>10</option><option>25</option><option>50</option></select> entries</span>
-          </div>
-          <div class="table-actions">
-            <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📄 CSV</button>
-            <button class="btn btn-ghost btn-sm" onclick="exportJSON()">📦 JSON</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
-            <button class="btn btn-ghost btn-sm" onclick="loadTickets()">↻ Refresh</button>
-          </div>
+        <div class="filter-group">
+          <label>Priority</label>
+          <select id="filterPriority" onchange="renderTable()">
+            <option value="">All Priorities</option>
+            <option>Urgent</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
         </div>
-        <table><thead><tr>
-          <th onclick="sortBy('ticketId')" style="cursor:pointer">Ticket ID ↕</th>
-          <th onclick="sortBy('title')" style="cursor:pointer">Title ↕</th>
-          <th>Submitted By</th><th>Category</th>
-          <th onclick="sortBy('priority')" style="cursor:pointer">Priority ↕</th>
-          <th onclick="sortBy('status')" style="cursor:pointer">Status ↕</th>
-          <th>Assigned To</th>
-          <th onclick="sortBy('createdAt')" style="cursor:pointer">Created ↕</th>
-          <th>Actions</th>
-        </tr></thead>
-        <tbody id="ticketBody"></tbody></table>
-        <div class="table-footer">
-          <span id="tableInfo">Loading...</span>
-          <div class="pagination" id="pagination"></div>
+        <div class="filter-group">
+          <label>Department</label>
+          <select id="filterDepartment" onchange="renderTable()">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Assigned To</label>
+          <select id="filterAssigned" onchange="renderTable()">
+            <option value="">All</option>
+            <option value="Unassigned">Unassigned</option>
+            <option value="Support Agent">Support Agent</option>
+            <option value="Admin">Admin</option>
+          </select>
         </div>
       </div>
     </div>
 
-    <!-- USERS PAGE -->
-    <div class="page" id="page-users">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <h2 style="font-size:18px;font-weight:700;">👥 User Management</h2>
-        <button class="btn btn-primary" onclick="openUserModal()">+ Add User</button>
-      </div>
-      <div class="table-card">
-        <div class="table-topbar">
-          <h3>All Users</h3>
-          <button class="btn btn-ghost btn-sm" onclick="loadUsers()">↻ Refresh</button>
+    <!-- TICKETS TABLE CARD -->
+    <div class="table-card">
+      <div class="table-topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <h3>🎫 Support Tickets</h3>
+          <span style="font-size:12px;color:var(--text3)">
+            Show 
+            <select class="entries-select" id="entriesCount" onchange="renderTable()">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select> 
+            entries
+          </span>
         </div>
-        <table><thead><tr>
-          <th>Name</th><th>Username</th><th>Role</th><th>Created</th><th>Status</th><th>Actions</th>
-        </tr></thead>
-        <tbody id="userBody"></tbody></table>
-      </div>
-    </div>
-
-    <!-- DEPARTMENTS PAGE -->
-    <div class="page" id="page-departments">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <h2 style="font-size:18px;font-weight:700;">🏢 Departments / Categories</h2>
-        <button class="btn btn-primary" onclick="openCatModal()">+ Add Category</button>
-      </div>
-      <div class="dept-grid" id="deptGrid"></div>
-    </div>
-
-    <!-- LOGS PAGE -->
-    <div class="page" id="page-logs">
-      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px;">📋 Activity Logs</h2>
-      <div class="table-card" style="padding:20px;">
-        <div class="log-list" id="logList"><p style="color:var(--text3)">No logs yet.</p></div>
-      </div>
-    </div>
-
-    <!-- ACCOUNT PAGE -->
-    <div class="page" id="page-account">
-      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px;">👤 My Account</h2>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:540px;">
-        <div id="accAvatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;color:white;margin-bottom:16px;">A</div>
-        <div style="font-size:20px;font-weight:700;" id="accName">Admin</div>
-        <div style="font-size:13px;color:var(--text3);margin-bottom:20px;" id="accRole">Admin</div>
-        <div style="display:grid;gap:12px;">
-          <div><label style="display:block;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Username</label><div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;" id="accUsername"></div></div>
-          <div><label style="display:block;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Role</label><div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;" id="accRoleVal"></div></div>
+        <div class="table-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📄 CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">📦 JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadTickets()">↻ Refresh</button>
         </div>
       </div>
-    </div>
 
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortBy('ticketId')" style="cursor:pointer">Ticket ID ↕</th>
+              <th onclick="sortBy('title')" style="cursor:pointer">Title ↕</th>
+              <th>Submitted By</th>
+              <th onclick="sortBy('submittedByDepartment')" style="cursor:pointer">Department ↕</th>
+              <th onclick="sortBy('issue')" style="cursor:pointer">Issue ↕</th>
+              <th onclick="sortBy('priority')" style="cursor:pointer">Priority ↕</th>
+              <th onclick="sortBy('status')" style="cursor:pointer">Status ↕</th>
+              <th>Assigned To</th>
+              <th>Device / IP</th>
+              <th onclick="sortBy('createdAt')" style="cursor:pointer">Created ↕</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ticketBody"></tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span id="tableInfo">Loading...</span>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ══ MODALS ══ -->
 
-<!-- TICKET MODAL -->
+<!-- TICKET CREATE / EDIT MODAL -->
 <div class="modal-overlay" id="ticketModal">
   <div class="modal">
-    <div class="modal-header"><h2 id="tmTitle">+ Create Ticket</h2><button class="modal-close" onclick="closeModal('ticketModal')">✕</button></div>
+    <div class="modal-header">
+      <h2 id="tmTitle">+ Create Ticket</h2>
+      <button class="modal-close" onclick="closeModal('ticketModal')">✕</button>
+    </div>
     <div class="form-grid">
       <input type="hidden" id="editTicketId"/>
-      <div class="form-group"><label>Title *</label><input type="text" id="fTitle" placeholder="Brief description"/></div>
-      <div class="form-group"><label>Description</label><textarea id="fDesc" rows="3" placeholder="Detailed explanation..."></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>Category *</label><select id="fCategory"><option value="">Select...</option></select></div>
-        <div class="form-group"><label>Priority</label><select id="fPriority"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div>
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="fTitle" placeholder="Brief issue description"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="fDesc" rows="3" placeholder="Detailed explanation..."></textarea>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Status</label><select id="fStatus"><option>Open</option><option>In Progress</option><option>Pending</option><option>Resolved</option><option>Closed</option></select></div>
-        <div class="form-group"><label>Assigned To</label><select id="fAssigned"><option>Unassigned</option><option>Support Agent</option><option>Admin</option><option>Level 2 Support</option></select></div>
+        <div class="form-group">
+          <label>Department *</label>
+          <select id="fDepartment">
+            <option value="">Select department...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="fPriority">
+            <option>Low</option>
+            <option selected>Medium</option>
+            <option>High</option>
+            <option>Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="fStatus">
+            <option>Open</option>
+            <option>In Progress</option>
+            <option>Pending</option>
+            <option>Resolved</option>
+            <option>Closed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assigned To</label>
+          <select id="fAssigned">
+            <option value="Unassigned">Unassigned</option>
+            <option value="Support Agent">Support Agent</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('ticketModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveTicket()">💾 Save</button>
+      <button class="btn btn-primary" onclick="saveTicket()">💾 Save Ticket</button>
     </div>
   </div>
 </div>
 
-<!-- USER MODAL -->
-<div class="modal-overlay" id="userModal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header"><h2 id="umTitle">Add User</h2><button class="modal-close" onclick="closeModal('userModal')">✕</button></div>
-    <div class="form-grid">
-      <input type="hidden" id="editUserId"/>
-      <div class="form-group"><label>Full Name *</label><input type="text" id="uName" placeholder="John Smith"/></div>
-      <div class="form-row">
-        <div class="form-group"><label>Username *</label><input type="text" id="uUsername" placeholder="jsmith"/></div>
-        <div class="form-group"><label>Role *</label><select id="uRole"><option>User</option><option>Support Agent</option><option>Admin</option></select></div>
-      </div>
-      <div class="form-group"><label>Password *</label><input type="password" id="uPassword" placeholder="Min 6 characters"/></div>
-      <div class="form-group" id="uActiveGroup" style="display:none">
-        <label>Active</label>
-        <select id="uActive"><option value="true">Active</option><option value="false">Suspended</option></select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('userModal')">Cancel</button>
-      <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">💾 Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- CATEGORY MODAL -->
-<div class="modal-overlay" id="catModal">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-header"><h2 id="cmTitle">Add Category</h2><button class="modal-close" onclick="closeModal('catModal')">✕</button></div>
-    <div class="form-grid">
-      <input type="hidden" id="editCatId"/>
-      <div class="form-group"><label>Name *</label><input type="text" id="cName" placeholder="e.g. Network & Security"/></div>
-      <div class="form-group"><label>Icon (emoji)</label><input type="text" id="cIcon" placeholder="🔧" maxlength="4"/></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('catModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCat()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- VIEW TICKET -->
+<!-- VIEW TICKET MODAL -->
 <div class="modal-overlay" id="viewModal">
   <div class="modal">
-    <div class="modal-header"><h2 id="viewTitle">Ticket</h2><button class="modal-close" onclick="closeModal('viewModal')">✕</button></div>
+    <div class="modal-header">
+      <h2 id="viewTitle">Ticket Details</h2>
+      <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
+    </div>
     <div id="viewContent" style="display:grid;gap:14px;"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('viewModal')">Close</button>
-      <button class="btn btn-primary" id="viewEditBtn">✏️ Edit</button>
+      <button class="btn btn-primary" id="viewEditBtn">✏️ Edit Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ASSIGN USER ══ -->
+<div class="modal-overlay" id="modalAssign" role="dialog" aria-modal="true" aria-labelledby="assignDialogTitle">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2 id="assignDialogTitle">👤 Assign Issue to User</h2>
+      <button class="modal-close" onclick="closeModal('modalAssign')">✕</button>
+    </div>
+    <div style="padding: 0 4px 14px;">
+      <input type="hidden" id="assignTargetTicketId"/>
+      
+      <div id="assignTicketSummary" style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span id="assignTicketId" style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:600;"></span>
+          <span id="assignTicketPriority"></span>
+        </div>
+        <div id="assignTicketTitle" style="font-weight:600;font-size:14px;margin-bottom:4px;"></div>
+        <div style="font-size:12px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;">
+          <span id="assignTicketDept"></span>
+          <span id="assignTicketCurrent"></span>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label for="assignSearchInput">🔍 Search User</label>
+        <input type="text" id="assignSearchInput" placeholder="Search name, username, email, department..." oninput="filterAssignUsers()"/>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;justify-content:space-between;">
+        <span>Select user from system</span>
+        <span id="assignUsersCount">0 users</span>
+      </div>
+
+      <div id="assignUsersList" class="assign-users-list">
+        <div class="empty-state"><p>Loading users...</p></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+      <button class="btn btn-danger btn-sm" onclick="confirmUnassign()" id="btnUnassignTicket">✕ Unassign</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modalAssign')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- VNC launch and manual fallback -->
+<div class="modal-overlay" id="vncModal" role="dialog" aria-modal="true" aria-labelledby="vncTitle">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h2 id="vncTitle">Open ticket in VNC</h2>
+      <button class="modal-close" aria-label="Close VNC dialog" onclick="closeModal('vncModal')">✕</button>
+    </div>
+    <p id="vncTicketRef" style="overflow-wrap:anywhere;margin-bottom:16px"></p>
+    <div class="form-group">
+      <label for="vncIp">Ticket IP address</label>
+      <div style="display:flex;gap:8px">
+        <input id="vncIp" type="text" readonly onclick="selectVncIp()" style="min-width:0;flex:1"/>
+        <button class="btn btn-ghost" onclick="copyVncIp()">Copy IP</button>
+      </div>
+    </div>
+    <p id="vncCopyStatus" role="status" style="margin-bottom:12px"></p>
+    <p id="vncLaunchStatus" role="status" style="color:var(--text2);margin-bottom:16px"></p>
+    <div style="padding:14px;background:var(--bg3);border-radius:8px;color:var(--text2);font-size:13px;line-height:1.6">
+      <strong>VNC didn't open?</strong>
+      <p>Open your installed viewer and paste the IP into its address field. You can also try the standard VNC link below if your viewer supports it.</p>
+      <p>If no viewer is installed, <a href="https://www.realvnc.com/en/connect/download/viewer/" target="_blank" rel="noopener noreferrer">download RealVNC Viewer</a>, install it, then try again. Portable viewers may need to be opened manually.</p>
+      <p>The remote PC must be reachable and running a VNC server. This page cannot confirm whether the viewer opened.</p>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+      <a class="btn btn-primary" id="vncLaunchLink">Open RealVNC</a>
+      <a class="btn btn-ghost" id="vncStandardLink">Try standard VNC</a>
+      <button class="btn btn-ghost" onclick="closeModal('vncModal')">Close</button>
     </div>
   </div>
 </div>
 
 <div id="toast-container"></div>
 
-<script>
-// ══ CONFIG ══
-const API_BASE = 'http://192.168.180.43:6080'; // ← Change this to your server IP
-
-// ══ STATE ══
-let token = localStorage.getItem('hd_token');
-let user  = JSON.parse(localStorage.getItem('hd_user') || 'null');
-let allTickets = [], allUsers = [], allCategories = [];
-let activeStatus = 'all', sortField = 'createdAt', sortDir = -1;
-let currentPage = 1;
-let logs = [];
-
-// Auth guard
-if (!token || !user) { window.location.href = 'login.html'; }
-
-// Init user display
-document.getElementById('sidebarUser').textContent  = user.name;
-document.getElementById('sidebarRole').textContent  = user.role;
-document.getElementById('avatarInitial').textContent = user.name.charAt(0).toUpperCase();
-document.getElementById('accName').textContent      = user.name;
-document.getElementById('accRole').textContent      = user.role;
-document.getElementById('accUsername').textContent  = user.username;
-document.getElementById('accRoleVal').textContent   = user.role;
-document.getElementById('accAvatar').textContent    = user.name.charAt(0).toUpperCase();
-
-// ══ API HELPER ══
-async function api(path, method='GET', body=null) {
-  const opts = {
-    method,
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-  };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${API_BASE}${path}`, opts);
-  if (res.status === 401) { doLogout(); return null; }
-  return res.json();
-}
-
-// ══ HEALTH CHECK ══
-async function checkHealth() {
-  try {
-    const r = await fetch(`${API_BASE}/health`);
-    const ok = r.ok;
-    document.getElementById('apiDot').className    = 'api-dot ' + (ok?'online':'offline');
-    document.getElementById('apiStatus').textContent = ok ? `Connected — ${API_BASE}` : 'API Offline';
-  } catch { 
-    document.getElementById('apiDot').className    = 'api-dot offline';
-    document.getElementById('apiStatus').textContent = 'Cannot reach server';
-  }
-}
-
-// ══ PAGES ══
-const pageTitles = {
-  dashboard:   '🏠 Dashboard <span>/ Overview</span>',
-  users:       '👥 Users <span>/ Management</span>',
-  departments: '🏢 Departments <span>/ Categories</span>',
-  logs:        '📋 Activity Logs',
-  account:     '👤 My Account',
-};
-
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (el) el.classList.add('active');
-  document.getElementById('pageTitle').innerHTML = pageTitles[id] || id;
-  if (id === 'departments') loadCategories();
-  if (id === 'users')       loadUsers();
-  if (id === 'logs')        renderLogs();
-}
-
-// ══ TICKETS ══
-async function loadTickets() {
-  const j = await api('/api/tickets');
-  if (!j) return;
-  allTickets = j.data || [];
-  addLog('Tickets loaded', 'info');
-  populateCategoryFilter();
-  renderTable();
-  updateStats();
-}
-
-function getFiltered() {
-  const q   = document.getElementById('searchInput').value.toLowerCase();
-  const pri = document.getElementById('filterPriority').value;
-  const cat = document.getElementById('filterCategory').value;
-  const asg = document.getElementById('filterAssigned').value;
-  return allTickets
-    .filter(t =>
-      (activeStatus === 'all' || t.status === activeStatus) &&
-      (!q || t.title.toLowerCase().includes(q) || t.ticketId.toLowerCase().includes(q) || t.submittedBy.toLowerCase().includes(q)) &&
-      (!pri || t.priority === pri) &&
-      (!cat || t.category === cat) &&
-      (!asg || t.assignedTo === asg)
-    )
-    .sort((a,b) => {
-      const va = a[sortField]||'', vb = b[sortField]||'';
-      return va < vb ? -sortDir : va > vb ? sortDir : 0;
-    });
-}
-
-function renderTable() {
-  const n     = parseInt(document.getElementById('entriesCount').value)||10;
-  const items = getFiltered();
-  const pages = Math.max(1, Math.ceil(items.length/n));
-  if (currentPage > pages) currentPage = 1;
-  const slice = items.slice((currentPage-1)*n, currentPage*n);
-  const tbody = document.getElementById('ticketBody');
-
-  if (!slice.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="es-icon">🎫</div><p>No tickets found</p></div></td></tr>`;
-  } else {
-    tbody.innerHTML = slice.map(t => `<tr>
-      <td><span class="ticket-id">${t.ticketId}</span></td>
-      <td><div class="ticket-title">${esc(t.title)}</div></td>
-      <td style="font-size:12px;color:var(--text2)">${esc(t.submittedByName||t.submittedBy)}</td>
-      <td><span class="category-tag">${esc(t.category)}</span></td>
-      <td>${priBadge(t.priority)}</td>
-      <td>${stBadge(t.status)}</td>
-      <td style="font-size:12px;color:var(--text2)">${esc(t.assignedTo)}</td>
-      <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap">${fmtDate(t.createdAt)}</td>
-      <td><div class="actions-cell">
-        <button class="icon-btn" onclick="viewTicket('${t.id}')">👁</button>
-        <button class="icon-btn" onclick="openEditTicket('${t.id}')">✏️</button>
-        <button class="icon-btn del" onclick="deleteTicket('${t.id}')">🗑</button>
-      </div></td>
-    </tr>`).join('');
-  }
-
-  const start = items.length ? (currentPage-1)*n+1 : 0;
-  const end   = Math.min(currentPage*n, items.length);
-  document.getElementById('tableInfo').textContent = items.length
-    ? `Showing ${start} to ${end} of ${items.length} entries` : 'No entries';
-
-  const pg = document.getElementById('pagination');
-  pg.innerHTML = '';
-  const addPg = (lbl, p, disabled, active) => {
-    const b = document.createElement('div');
-    b.className = 'page-btn'+(active?' active':'')+(disabled?' disabled':'');
-    b.textContent = lbl;
-    if (!disabled) b.onclick = () => { currentPage = p; renderTable(); };
-    pg.appendChild(b);
-  };
-  addPg('«',1,currentPage===1);
-  addPg('‹',currentPage-1,currentPage===1);
-  for (let i=Math.max(1,currentPage-2);i<=Math.min(pages,currentPage+2);i++) addPg(i,i,false,i===currentPage);
-  addPg('›',currentPage+1,currentPage===pages);
-  addPg('»',pages,currentPage===pages);
-}
-
-function sortBy(f) {
-  if (sortField===f) sortDir*=-1; else {sortField=f;sortDir=1;}
-  renderTable();
-}
-
-function filterByStatus(s,el) {
-  activeStatus = s; currentPage = 1;
-  document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderTable();
-}
-
-function clearFilters() {
-  document.getElementById('searchInput').value='';
-  document.getElementById('filterPriority').value='';
-  document.getElementById('filterCategory').value='';
-  document.getElementById('filterAssigned').value='';
-  activeStatus='all'; currentPage=1;
-  document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active'));
-  document.querySelector('[data-status="all"]').classList.add('active');
-  renderTable();
-}
-
-function updateStats() {
-  const cnt = s => allTickets.filter(t=>t.status===s).length;
-  document.getElementById('cnt-all').textContent        = allTickets.length;
-  document.getElementById('cnt-open').textContent       = cnt('Open');
-  document.getElementById('cnt-inprogress').textContent = cnt('In Progress');
-  document.getElementById('cnt-pending').textContent    = cnt('Pending');
-  document.getElementById('cnt-resolved').textContent   = cnt('Resolved');
-  document.getElementById('cnt-closed').textContent     = cnt('Closed');
-}
-
-// ══ TICKET MODALS ══
-function openTicketModal() {
-  document.getElementById('tmTitle').textContent = '+ Create Ticket';
-  document.getElementById('editTicketId').value  = '';
-  ['fTitle','fDesc'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fPriority').value = 'Medium';
-  document.getElementById('fStatus').value   = 'Open';
-  document.getElementById('fAssigned').value = 'Unassigned';
-  document.getElementById('fCategory').value = '';
-  populateCatSelect();
-  document.getElementById('ticketModal').classList.add('open');
-}
-
-function openEditTicket(id) {
-  const t = allTickets.find(x=>x.id===id); if (!t) return;
-  document.getElementById('tmTitle').textContent    = '✏️ Edit Ticket';
-  document.getElementById('editTicketId').value     = t.id;
-  document.getElementById('fTitle').value           = t.title;
-  document.getElementById('fDesc').value            = t.description;
-  document.getElementById('fPriority').value        = t.priority;
-  document.getElementById('fStatus').value          = t.status;
-  document.getElementById('fAssigned').value        = t.assignedTo;
-  populateCatSelect();
-  setTimeout(() => document.getElementById('fCategory').value = t.category, 10);
-  document.getElementById('ticketModal').classList.add('open');
-}
-
-async function saveTicket() {
-  const id    = document.getElementById('editTicketId').value;
-  const title    = document.getElementById('fTitle').value.trim();
-  const category = document.getElementById('fCategory').value;
-  const priority = document.getElementById('fPriority').value;
-  const status   = document.getElementById('fStatus').value;
-  const assignedTo = document.getElementById('fAssigned').value;
-  const description = document.getElementById('fDesc').value.trim();
-
-  if (!title)    { toast('Title is required','error'); return; }
-  if (!category) { toast('Category is required','error'); return; }
-
-  let j;
-  if (id) {
-    j = await api(`/api/tickets/${id}`, 'PUT', { title, description, category, priority, status, assignedTo });
-    if (j?.success) { addLog(`Ticket updated: ${title}`, 'edit'); toast('Ticket updated!','success'); }
-  } else {
-    j = await api('/api/tickets', 'POST', { title, description, category, priority });
-    if (j?.success) { addLog(`Ticket created: ${title}`, 'create'); toast('Ticket created!','success'); }
-  }
-  if (j?.success) { closeModal('ticketModal'); await loadTickets(); }
-  else toast(j?.message || 'Error saving ticket', 'error');
-}
-
-async function deleteTicket(id) {
-  const t = allTickets.find(x=>x.id===id); if (!t) return;
-  if (!confirm(`Delete ${t.ticketId}?`)) return;
-  const j = await api(`/api/tickets/${id}`, 'DELETE');
-  if (j?.success) { addLog(`Ticket deleted: ${t.ticketId}`, 'delete'); toast(`Ticket deleted`,'info'); await loadTickets(); }
-  else toast(j?.message || 'Error','error');
-}
-
-function viewTicket(id) {
-  const t = allTickets.find(x=>x.id===id); if (!t) return;
-  document.getElementById('viewTitle').innerHTML = `<span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${t.ticketId}</span>`;
-  document.getElementById('viewContent').innerHTML = `
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Title</span><span style="font-weight:600">${esc(t.title)}</span></div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Submitted By</span><span>${esc(t.submittedByName)} (@${esc(t.submittedBy)})</span></div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Category</span><span style="color:var(--cyan)">${esc(t.category)}</span></div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Priority</span>${priBadge(t.priority)}</div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Status</span>${stBadge(t.status)}</div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Assigned To</span><span>${esc(t.assignedTo)}</span></div>
-    <div style="display:flex;gap:8px"><span style="min-width:130px;font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600">Created</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDate(t.createdAt)}</span></div>
-    <hr style="border:none;border-top:1px solid var(--border)"/>
-    <div><div style="font-size:12px;color:var(--text3);text-transform:uppercase;font-weight:600;margin-bottom:6px">Description / Message</div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text2);white-space:pre-wrap">${t.description || '<em>No description</em>'}</div></div>`;
-  document.getElementById('viewEditBtn').onclick = () => { closeModal('viewModal'); openEditTicket(id); };
-  document.getElementById('viewModal').classList.add('open');
-}
-
-// ══ USERS ══
-async function loadUsers() {
-  const j = await api('/api/users');
-  if (!j) return;
-  allUsers = j.data || [];
-  renderUsers();
-}
-
-function renderUsers() {
-  const tbody = document.getElementById('userBody');
-  if (!allUsers.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="es-icon">👥</div><p>No users found</p></div></td></tr>`; return; }
-  tbody.innerHTML = allUsers.map(u => {
-    const roleCls = u.role==='Admin'?'badge-admin':u.role==='Support Agent'?'badge-support':'badge-user';
-    return `<tr>
-      <td style="font-weight:600">${esc(u.name)}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)">@${esc(u.username)}</td>
-      <td><span class="badge ${roleCls}">${esc(u.role)}</span></td>
-      <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${fmtDate(u.createdAt)}</td>
-      <td><span class="badge ${u.active?'badge-resolved':'badge-closed'}">${u.active?'Active':'Suspended'}</span></td>
-      <td><div class="actions-cell">
-        <button class="icon-btn" onclick="openEditUser('${u.id}')">✏️</button>
-        <button class="icon-btn del" onclick="deleteUser('${u.id}','${esc(u.name)}')">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-function openUserModal() {
-  document.getElementById('umTitle').textContent  = 'Add User';
-  document.getElementById('editUserId').value     = '';
-  document.getElementById('uName').value          = '';
-  document.getElementById('uUsername').value      = '';
-  document.getElementById('uPassword').value      = '';
-  document.getElementById('uRole').value          = 'User';
-  document.getElementById('uUsername').disabled   = false;
-  document.getElementById('uPassword').placeholder = 'Min 6 characters';
-  document.getElementById('uActiveGroup').style.display = 'none';
-  document.getElementById('userModal').classList.add('open');
-}
-
-function openEditUser(id) {
-  const u = allUsers.find(x=>x.id===id); if (!u) return;
-  document.getElementById('umTitle').textContent  = '✏️ Edit User';
-  document.getElementById('editUserId').value     = u.id;
-  document.getElementById('uName').value          = u.name;
-  document.getElementById('uUsername').value      = u.username;
-  document.getElementById('uPassword').value      = '';
-  document.getElementById('uPassword').placeholder = 'Leave blank to keep current';
-  document.getElementById('uRole').value          = u.role;
-  document.getElementById('uUsername').disabled   = true;
-  document.getElementById('uActive').value        = String(u.active);
-  document.getElementById('uActiveGroup').style.display = 'flex';
-  document.getElementById('userModal').classList.add('open');
-}
-
-async function saveUser() {
-  const id       = document.getElementById('editUserId').value;
-  const name     = document.getElementById('uName').value.trim();
-  const username = document.getElementById('uUsername').value.trim();
-  const password = document.getElementById('uPassword').value;
-  const role     = document.getElementById('uRole').value;
-  const active   = document.getElementById('uActive').value === 'true';
-
-  if (!name) { toast('Name required','error'); return; }
-
-  let j;
-  if (id) {
-    const body = { name, role, active };
-    if (password) body.password = password;
-    j = await api(`/api/users/${id}`, 'PUT', body);
-    if (j?.success) { addLog(`User updated: ${name}`, 'edit'); toast('User updated!','success'); }
-  } else {
-    if (!username) { toast('Username required','error'); return; }
-    if (!password || password.length < 6) { toast('Password must be 6+ characters','error'); return; }
-    j = await api('/api/users', 'POST', { name, username, password, role });
-    if (j?.success) { addLog(`User created: ${name} (${username})`, 'create'); toast('User created!','success'); }
-  }
-  if (j?.success) { closeModal('userModal'); await loadUsers(); }
-  else toast(j?.message || 'Error saving user','error');
-}
-
-async function deleteUser(id, name) {
-  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
-  const j = await api(`/api/users/${id}`, 'DELETE');
-  if (j?.success) { addLog(`User deleted: ${name}`, 'delete'); toast('User deleted','info'); await loadUsers(); }
-  else toast(j?.message || 'Error','error');
-}
-
-// ══ CATEGORIES ══
-async function loadCategories() {
-  const j = await api('/api/categories');
-  if (!j) return;
-  allCategories = j.data || [];
-  renderDepts();
-  populateCatSelect();
-}
-
-function renderDepts() {
-  const max = Math.max(1, ...allCategories.map(c => allTickets.filter(t=>t.category===c.name).length));
-  document.getElementById('deptGrid').innerHTML = allCategories.map(c => {
-    const count = allTickets.filter(t=>t.category===c.name).length;
-    return `<div class="dept-card">
-      <div class="dept-icon">${c.icon}</div>
-      <div class="dept-name">${esc(c.name)}</div>
-      <div class="dept-count">${count} ticket${count!==1?'s':''}</div>
-      <div class="dept-bar"><div class="dept-bar-fill" style="width:${Math.round(count/max*100)}%"></div></div>
-      <div class="dept-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openEditCat('${c.id}')">✏️ Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCat('${c.id}','${esc(c.name)}')">🗑</button>
-      </div>
-    </div>`;
-  }).join('') || '<p style="color:var(--text3)">No categories yet.</p>';
-}
-
-function openCatModal() {
-  document.getElementById('cmTitle').textContent = 'Add Category';
-  document.getElementById('editCatId').value = '';
-  document.getElementById('cName').value = '';
-  document.getElementById('cIcon').value = '🔧';
-  document.getElementById('catModal').classList.add('open');
-}
-
-function openEditCat(id) {
-  const c = allCategories.find(x=>x.id===id); if (!c) return;
-  document.getElementById('cmTitle').textContent = '✏️ Edit Category';
-  document.getElementById('editCatId').value = c.id;
-  document.getElementById('cName').value = c.name;
-  document.getElementById('cIcon').value = c.icon;
-  document.getElementById('catModal').classList.add('open');
-}
-
-async function saveCat() {
-  const id   = document.getElementById('editCatId').value;
-  const name = document.getElementById('cName').value.trim();
-  const icon = document.getElementById('cIcon').value.trim() || '📁';
-  if (!name) { toast('Name required','error'); return; }
-  const j = id
-    ? await api(`/api/categories/${id}`, 'PUT',  { name, icon })
-    : await api('/api/categories',       'POST', { name, icon });
-  if (j?.success) { addLog(`Category ${id?'updated':'created'}: ${name}`, id?'edit':'create'); toast(`Category ${id?'updated':'created'}!`,'success'); closeModal('catModal'); await loadCategories(); }
-  else toast(j?.message || 'Error','error');
-}
-
-async function deleteCat(id, name) {
-  if (!confirm(`Delete category "${name}"?`)) return;
-  const j = await api(`/api/categories/${id}`, 'DELETE');
-  if (j?.success) { addLog(`Category deleted: ${name}`, 'delete'); toast('Category deleted','info'); await loadCategories(); }
-  else toast(j?.message || 'Error','error');
-}
-
-function populateCatSelect() {
-  const el = document.getElementById('fCategory');
-  const cur = el.value;
-  el.innerHTML = '<option value="">Select category...</option>';
-  allCategories.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c.name; o.textContent = c.icon + ' ' + c.name;
-    el.appendChild(o);
-  });
-  if (cur) el.value = cur;
-}
-
-function populateCategoryFilter() {
-  const el = document.getElementById('filterCategory');
-  el.innerHTML = '<option value="">All Categories</option>';
-  allCategories.forEach(c => {
-    const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; el.appendChild(o);
-  });
-}
-
-// ══ LOGS ══
-function addLog(msg, type='info') {
-  logs.unshift({ msg, type, time: new Date().toLocaleString() });
-  if (logs.length > 100) logs.pop();
-}
-const logColors = { create:'var(--green)', edit:'var(--accent)', delete:'var(--red)', info:'var(--text3)' };
-function renderLogs() {
-  const el = document.getElementById('logList');
-  if (!logs.length) { el.innerHTML = '<p style="color:var(--text3);font-size:13px">No activity yet.</p>'; return; }
-  el.innerHTML = logs.map(l => `<div class="log-item">
-    <div class="log-dot" style="background:${logColors[l.type]||logColors.info}"></div>
-    <div><div class="log-msg">${esc(l.msg)}</div><div class="log-time">${l.time}</div></div>
-  </div>`).join('');
-}
-
-// ══ EXPORT ══
-function exportCSV() {
-  const rows = [['Ticket ID','Title','Submitted By','Category','Priority','Status','Assigned To','Created']];
-  getFiltered().forEach(t => rows.push([t.ticketId,t.title,t.submittedBy,t.category,t.priority,t.status,t.assignedTo,fmtDate(t.createdAt)]));
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  download('tickets.csv','text/csv',csv);
-  toast('CSV exported!','success');
-}
-function exportJSON() {
-  download('tickets.json','application/json',JSON.stringify(getFiltered(),null,2));
-  toast('JSON exported!','success');
-}
-function download(fname,mime,data) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([data],{type:mime}));
-  a.download = fname; a.click();
-}
-
-// ══ MISC ══
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); }));
-
-function toggleTheme() {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('hd_theme', next);
-  document.getElementById('themeIcon').textContent  = next==='dark'?'☀️':'🌙';
-  document.getElementById('themeLabel').textContent = next==='dark'?'Light Mode':'Dark Mode';
-}
-
-function doLogout() {
-  if (confirm('Log out?')) {
-    localStorage.removeItem('hd_token');
-    localStorage.removeItem('hd_user');
-    window.location.href = 'login.html';
-  }
-}
-
-function toast(msg, type='info') {
-  const icons = { success:'✅', error:'❌', info:'ℹ️' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-function priBadge(p) {
-  const m = {Urgent:'badge-urgent',High:'badge-high',Medium:'badge-medium',Low:'badge-low'};
-  return `<span class="badge ${m[p]||'badge-medium'}">${p}</span>`;
-}
-function stBadge(s) {
-  const m = {'Open':'badge-open','In Progress':'badge-inprogress','Pending':'badge-pending','Resolved':'badge-resolved','Closed':'badge-closed'};
-  return `<span class="badge ${m[s]||'badge-open'}">${s}</span>`;
-}
-function fmtDate(ts) {
-  return new Date(ts).toLocaleString('en-US',{month:'short',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-}
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ══ INIT ══
-(async function init() {
-  const saved = localStorage.getItem('hd_theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-    document.getElementById('themeIcon').textContent  = saved==='dark'?'☀️':'🌙';
-    document.getElementById('themeLabel').textContent = saved==='dark'?'Light Mode':'Dark Mode';
-  }
-  await checkHealth();
-  await loadCategories();
-  await loadTickets();
-  setInterval(checkHealth, 30000);
-  addLog('Dashboard loaded', 'info');
-})();
-</script>
+<script src="js/replies.js"></script>
+<script src="js/app.js"></script>
+<script src="js/vnc.js"></script>
+<script src="js/dashboard.js"></script>
 </body>
 </html>

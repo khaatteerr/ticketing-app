@@ -1,0 +1,13 @@
+.ticket-replies { margin-top: 16px; min-width: 0; width: 100%; }
+.ticket-replies h4 { font-size: 13px; margin: 0 0 10px; }
+.reply-list { max-height: 320px; overflow: auto; }
+.ticket-reply { padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+.reply-meta { font-size: 11px; color: var(--text3); margin-bottom: 5px; overflow-wrap: anywhere; }
+.reply-meta strong { color: var(--text); }
+.reply-message { font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply-empty, .reply-feedback { font-size: 12px; color: var(--text3); }
+.reply-form label { display: block; font-size: 12px; margin-top: 12px; }
+.reply-form textarea { display: block; width: 100%; box-sizing: border-box; margin: 8px 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg3); color: var(--text); font: inherit; resize: vertical; }
+.reply-send { background: var(--accent); color: white; border: 0; border-radius: 7px; padding: 8px 14px; cursor: pointer; }
+.reply-send:disabled { opacity: .5; cursor: wait; }
+.reply-preview { font-size: 11px; color: var(--text3); margin-top: 5px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

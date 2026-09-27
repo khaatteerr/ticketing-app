@@ -23,10 +23,11 @@ object JwtConfig {
     fun generateToken(user: User): String = JWT.create()
         .withIssuer(issuer)
         .withAudience(audience)
-        .withClaim("userId",   user.id.toHexString())
-        .withClaim("username", user.username)
-        .withClaim("name",     user.name)
-        .withClaim("role",     user.role)
+        .withClaim("userId",     user.id.toHexString())
+        .withClaim("username",   user.username)
+        .withClaim("name",       user.name)
+        .withClaim("role",       user.role)
+        .withClaim("department", user.department)
         .withExpiresAt(Date(System.currentTimeMillis() + expirationHours * 3_600_000))
         .sign(Algorithm.HMAC256(secret))
 
@@ -40,8 +41,9 @@ object JwtConfig {
     fun getAudience() = audience
 }
 
-// Helper extension to get username from JWT principal
-fun JWTPrincipal.username(): String = payload.getClaim("username").asString() ?: ""
-fun JWTPrincipal.name(): String     = payload.getClaim("name").asString() ?: ""
-fun JWTPrincipal.role(): String     = payload.getClaim("role").asString() ?: ""
-fun JWTPrincipal.userId(): String   = payload.getClaim("userId").asString() ?: ""
+// Helper extensions to read claims off the JWT principal
+fun JWTPrincipal.username(): String    = payload.getClaim("username").asString() ?: ""
+fun JWTPrincipal.name(): String        = payload.getClaim("name").asString() ?: ""
+fun JWTPrincipal.role(): String        = payload.getClaim("role").asString() ?: ""
+fun JWTPrincipal.userId(): String      = payload.getClaim("userId").asString() ?: ""
+fun JWTPrincipal.department(): String? = payload.getClaim("department").asString()

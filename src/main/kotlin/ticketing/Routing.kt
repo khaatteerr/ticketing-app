@@ -28,5 +28,8 @@ fun Application.configureRouting() {
         userRoutes()
         ticketRoutes()
         categoryRoutes()
+        departmentRoutes()
+        issueRoutes()
+        adRoutes()
     }
 }

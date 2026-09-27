@@ -8,21 +8,19 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.bson.types.ObjectId
-import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
-import org.mindrot.jbcrypt.BCrypt
 
 fun Route.userRoutes() {
 
     authenticate("auth-jwt") {
         route("/api/users") {
 
-            // GET /api/users — Admin only
+            // GET /api/users — Admin and Support Agent
             get {
                 val principal = call.principal<JWTPrincipal>()!!
-                if (principal.role() != "Admin") {
+                if (principal.role() !in listOf("Admin", "Support Agent")) {
                     call.respond(HttpStatusCode.Forbidden,
-                        ApiResponse<Unit>(success = false, message = "Admin access required")
+                        ApiResponse<Unit>(success = false, message = "Admin or Support Agent access required")
                     )
                     return@get
                 }
@@ -33,7 +31,11 @@ fun Route.userRoutes() {
             // GET /api/users/me — current user profile
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()!!
-                val id = ObjectId(principal.userId())
+                val id = runCatching { ObjectId(principal.userId()) }.getOrNull()
+                    ?: run {
+                        call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid token"))
+                        return@get
+                    }
                 val user = users.findOneById(id)
                 if (user == null) {
                     call.respond(HttpStatusCode.NotFound,
@@ -44,54 +46,8 @@ fun Route.userRoutes() {
                 call.respond(ApiResponse(success = true, data = user.toPublic()))
             }
 
-            // POST /api/users — Admin only, create user
-            post {
-                val principal = call.principal<JWTPrincipal>()!!
-                if (principal.role() != "Admin") {
-                    call.respond(HttpStatusCode.Forbidden,
-                        ApiResponse<Unit>(success = false, message = "Admin access required")
-                    )
-                    return@post
-                }
-                val body = call.receive<CreateUserRequest>()
-
-                if (body.username.isBlank() || body.password.isBlank() || body.name.isBlank()) {
-                    call.respond(HttpStatusCode.BadRequest,
-                        ApiResponse<Unit>(success = false, message = "Username, name and password are required")
-                    )
-                    return@post
-                }
-
-                val existing = users.findOne(User::username eq body.username)
-                if (existing != null) {
-                    call.respond(HttpStatusCode.Conflict,
-                        ApiResponse<Unit>(success = false, message = "Username already exists")
-                    )
-                    return@post
-                }
-
-                val validRoles = listOf("Admin", "User", "Support Agent")
-                if (body.role !in validRoles) {
-                    call.respond(HttpStatusCode.BadRequest,
-                        ApiResponse<Unit>(
-                            success = false,
-                            message = "Invalid role. Use: ${validRoles.joinToString(", ")}"
-                        )
-                    )
-                    return@post
-                }
-
-                val user = User(
-                    username = body.username.trim().lowercase(),
-                    name = body.name.trim(),
-                    passwordHash = BCrypt.hashpw(body.password, BCrypt.gensalt()),
-                    role = body.role
-                )
-                users.insertOne(user)
-                call.respond(HttpStatusCode.Created,
-                    ApiResponse(success = true, message = "User created", data = user.toPublic())
-                )
-            }
+            // Users are created only by the AD sync (see UserSync.kt) — there is no
+            // POST /api/users here anymore.
 
             // GET /api/users/{id}
             get("/{id}") {
@@ -112,7 +68,8 @@ fun Route.userRoutes() {
                 } ?: call.respond(HttpStatusCode.BadRequest, ApiResponse<Unit>(success = false, message = "Invalid ID"))
             }
 
-            // PUT /api/users/{id} — Admin only
+            // PUT /api/users/{id} — Admin only. AD owns name/email/department/active;
+            // the only thing an admin can change here is the app-level role.
             put("/{id}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {
@@ -128,21 +85,36 @@ fun Route.userRoutes() {
                     ); return@put }
 
                 val body = call.receive<UpdateUserRequest>()
-                val user = users.findOneById(oid)
+                val existing = users.findOneById(oid)
                     ?: run { call.respond(HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, message = "User not found")
                     ); return@put }
 
-                body.name?.let     { users.updateOneById(oid, setValue(User::name,   it.trim())) }
-                body.role?.let     { users.updateOneById(oid, setValue(User::role,   it)) }
-                body.active?.let   { users.updateOneById(oid, setValue(User::active, it)) }
-                body.password?.let { users.updateOneById(oid, setValue(User::passwordHash, BCrypt.hashpw(it, BCrypt.gensalt()))) }
+                val validRoles = listOf("Admin", "User", "Support Agent")
+                body.role?.let { newRole ->
+                    if (newRole !in validRoles) {
+                        call.respond(HttpStatusCode.BadRequest,
+                            ApiResponse<Unit>(success = false, message = "Invalid role. Use: ${validRoles.joinToString(", ")}")
+                        )
+                        return@put
+                    }
+                    // Don't let the last admin demote themselves by accident
+                    if (existing.id.toHexString() == principal.userId() && newRole != "Admin") {
+                        call.respond(HttpStatusCode.BadRequest,
+                            ApiResponse<Unit>(success = false, message = "Cannot change your own admin role")
+                        )
+                        return@put
+                    }
+                    users.updateOneById(oid, setValue(User::role, newRole))
+                }
 
                 val updated = users.findOneById(oid)
                 call.respond(ApiResponse(success = true, message = "User updated", data = updated?.toPublic()))
             }
 
-            // DELETE /api/users/{id} — Admin only, cannot delete self
+            // DELETE /api/users/{id} — Admin only, cannot delete self.
+            // NOTE: if this user is source == "AD", the next sync will simply re-create it as active.
+            // To keep someone out permanently, disable their AD account instead of deleting here.
             delete("/{id}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 if (principal.role() != "Admin") {

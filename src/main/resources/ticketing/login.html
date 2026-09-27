@@ -19,6 +19,17 @@
     --green:   #22c55e;
     --red:     #ef4444;
   }
+  [data-theme="light"] {
+    --bg:      #f0f2f8;
+    --bg2:     #ffffff;
+    --bg3:     #e8eaf2;
+    --border:  #d4d8e8;
+    --text:    #1a1e2e;
+    --text2:   #4a5070;
+    --text3:   #8890aa;
+    --accent:  #4f7cff;
+    --accent2: #6b5bfc;
+  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Space Grotesk', sans-serif;
@@ -31,6 +42,7 @@
     padding: 20px;
     position: relative;
     overflow: hidden;
+    transition: background .25s, color .25s;
   }
 
   /* background grid */
@@ -169,6 +181,10 @@
   <div class="blob blob1"></div>
   <div class="blob blob2"></div>
 
+  <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme" style="position:fixed;top:20px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,0.15);transition:transform 0.15s, border-color 0.15s;">
+    <span id="themeIcon">☀️</span>
+  </button>
+
   <div class="login-card">
     <div class="logo">
       <div class="logo-icon">🎫</div>
@@ -216,10 +232,12 @@
 
 <script>
   // ── CONFIG ──────────────────────────────────────────
-  // Change this to your server IP:  e.g. http://192.168.1.50:8080
-  const API_BASE = 'http://192.168.180.43:6080';
+  const API_BASE = (window.location.origin && window.location.origin.startsWith('http'))
+    ? window.location.origin
+    : 'http://localhost:6080';
 
-  document.getElementById('apiUrlDisplay').textContent = API_BASE;
+  const apiDisplay = document.getElementById('apiUrlDisplay');
+  if (apiDisplay) apiDisplay.textContent = API_BASE;
 
   // Enter key support
   document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('password').focus(); });
@@ -287,6 +305,28 @@
       setLoading(false);
     }
   }
+
+  /* ── Theme Support (Light / Dark) ────────────────────────── */
+  function initTheme() {
+    const saved = localStorage.getItem('hd_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeIcon(saved);
+  }
+
+  function updateThemeIcon(t) {
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('hd_theme', next);
+    updateThemeIcon(next);
+  }
+
+  initTheme();
 
   // Auto-redirect if already logged in
   (function checkExisting() {

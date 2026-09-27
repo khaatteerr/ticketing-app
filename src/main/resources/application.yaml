@@ -15,4 +15,16 @@ jwt:
 
 mongodb:
   connectionString: "mongodb+srv://ahmederaqi252_db_user:Vo16bylNaLItbPQU@cluster0.a6klah9.mongodb.net/?appName=Cluster0"
+#  connectionString: "mongodb://localhost:27017/helpdesk"
   database: "helpdesk"
+
+
+ldap:
+  host: "serd.batch.local"
+  port: 389
+  useSsl: false
+  bindDn: "CN=eraqi,OU=batchdep,DC=batch,DC=local"
+  bindPassword: "000"
+  baseDn: "DC=batch,DC=local"
+  trustAllCertificates: true   # TEMPORARY for testing only. Set false once the CA cert is in the JVM truststore
+  syncMinutes: 30

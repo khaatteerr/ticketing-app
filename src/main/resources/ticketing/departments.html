@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HelpDesk Pro — Departments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <a href="index.html" class="sidebar-logo">
+    <div class="logo-icon">🎫</div>
+    <div>
+      <div class="logo-text">HelpDesk Pro</div>
+      <div class="logo-sub">Admin Portal</div>
+    </div>
+  </a>
+  <div class="user-card">
+    <div class="user-avatar" id="avatarInitial">A</div>
+    <div>
+      <div class="user-name" id="sidebarUser">Admin</div>
+      <span class="user-role" id="sidebarRole">Admin</span>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Menu</div>
+    <a href="index.html" class="nav-item" data-page="dashboard"><span class="ni">🏠</span> Dashboard</a>
+    <a href="users.html" class="nav-item" data-page="users"><span class="ni">👥</span> Users</a>
+    <a href="departments.html" class="nav-item active" data-page="departments"><span class="ni">🏢</span> Departments</a>
+    <a href="issues.html" class="nav-item" data-page="issues"><span class="ni">🎯</span> Issues</a>
+    <a href="sync.html" class="nav-item" data-page="sync"><span class="ni">⚡</span> AD Sync</a>
+    <div class="nav-section">Personal</div>
+    <a href="logs.html" class="nav-item" data-page="logs"><span class="ni">📋</span> Activity Logs</a>
+    <a href="account.html" class="nav-item" data-page="account"><span class="ni">👤</span> My Account</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span id="themeIcon">☀️</span><span id="themeLabel">Light Mode</span>
+    </div>
+    <div class="logout-btn" onclick="doLogout()"><span>🚪</span> Logout</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title">🏢 Departments <span>/ System Organization</span></div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="api-status">
+        <div class="api-dot" id="apiDot"></div>
+        <span id="apiStatus">Connecting...</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadDepartmentsData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="notice-banner">
+      <span style="font-size:18px;">💾</span>
+      <div>
+        <strong>Database Records:</strong> Departments are stored and loaded directly from MongoDB, kept up to date automatically or on-demand via the AD Sync feature.
+      </div>
+    </div>
+
+    <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-weight:600;font-size:15px;">Total Departments:</span>
+        <span class="badge badge-medium" id="totalDeptCount" style="font-size:13px;padding:4px 10px;">0</span>
+      </div>
+      <div style="max-width:320px;width:100%;">
+        <input type="text" id="deptSearch" placeholder="Search departments..." oninput="renderDepartments()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);outline:none;"/>
+      </div>
+    </div>
+
+    <!-- DEPARTMENTS GRID -->
+    <div class="dept-grid" id="deptGrid"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/app.js"></script>
+<script src="js/departments.js"></script>
+</body>
+</html>
