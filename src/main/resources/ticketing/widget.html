@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Quick Ticket — HelpDesk Pro</title>
+  <link rel="stylesheet" href="css/widget.css"/>
+  <script src="js/widget.js" defer></script>
+</head>
+<body>
+  <main class="widget">
+    <header><div class="icon">🎫</div><div><h1>Quick Ticket</h1><p id="widgetUser">Loading your profile...</p></div></header>
+    <p class="intro">Choose an issue to request help.</p>
+    <form id="quickTicketForm">
+      <label for="issueHead">Issue head</label>
+      <select id="issueHead" disabled><option value="">Loading issues...</option></select>
+      <label for="subIssue">Sub-issue</label>
+      <select id="subIssue" disabled><option value="">Select an issue head first</option></select>
+      <p id="issueHint" class="hint"></p>
+      <button id="quickSubmit" type="submit" hidden>Submit ticket</button>
+    </form>
+    <p id="widgetStatus" role="status" aria-live="polite"></p>
+    <button id="widgetRetry" type="button" class="secondary" hidden>Try again</button>
+    <footer><a href="submit.html" target="_blank" rel="noopener">My tickets / full form ↗</a><button id="widgetRefresh" type="button" class="link-button">Refresh issues</button></footer>
+  </main>
+</body>
+</html>

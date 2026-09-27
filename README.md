@@ -28,3 +28,16 @@ If the server starts successfully, you'll see the following output:
 2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
 2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
 ```
+
+## Quick Ticket desktop window
+
+Click **Quick Ticket Widget** on the dashboard or Submit Tickets page to open a
+small, resizable browser window (390 × 520). Select an issue head and sub-issue;
+the Submit button appears after a sub-issue is selected. The widget uses the
+current login and department, and creates a normal ticket with no extra message.
+After submission it shows the ticket reference and resets for the next request.
+
+The widget is also available at `/widget.html`. Login redirects back to it when
+needed. If the browser blocks popup windows, the launcher opens the widget as a
+normal page. Window positioning, minimizing, and staying on top are controlled by
+the browser and operating system; this is not an installed native desktop widget.

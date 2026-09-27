@@ -351,6 +351,7 @@
     <div class="logo-text">HelpDesk Pro</div>
   </div>
   <div class="topbar-right">
+    <a href="widget.html" onclick="openTicketWidget(event)" style="color:var(--accent);font-size:12px;white-space:nowrap">🎫 Quick Ticket Widget</a>
     <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">
       <span id="themeIcon">☀️</span>
     </button>
@@ -452,6 +453,7 @@
   <div id="ticketList"><div class="empty-tickets">Loading your tickets...</div></div>
 </div>
 
+<script src="js/widget-launcher.js"></script>
 <script src="js/replies.js"></script>
 <script>
   const API_BASE = (window.location.origin && window.location.origin.startsWith('http'))
