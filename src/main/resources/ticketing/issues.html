@@ -76,6 +76,8 @@
 
     .empty-sub { color: var(--text3); font-size: 13px; font-style: italic; }
   </style>
+<link rel="stylesheet" href="css/paging.css"/>
+<script src="js/paging.js"></script>
 </head>
 <body>
 
@@ -150,11 +152,12 @@
       <div class="table-topbar">
         <h3>🌳 Issue Hierarchy Tree</h3>
         <div style="display:flex;gap:10px;">
-          <input type="text" id="searchInput" class="search-input" placeholder="Search heads, sub-issues, departments..." oninput="renderTree()" style="width:280px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 12px;color:var(--text);font-size:13px;"/>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search heads, sub-issues, departments..." oninput="searchIssues()" style="width:280px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 12px;color:var(--text);font-size:13px;"/>
         </div>
       </div>
 
       <div style="padding: 20px;">
+        <div id="issuePager" class="remote-pager"></div>
         <div id="treeContainer">
           <div class="empty-state"><p>Loading issues tree…</p></div>
         </div>

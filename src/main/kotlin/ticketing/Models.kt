@@ -357,7 +357,8 @@ data class UpdateSubIssueRequest(
 @Serializable
 data class IssueTreeNode(
     val head: IssueHeadPublic,
-    val subIssues: List<SubIssuePublic>
+    val subIssues: List<SubIssuePublic>,
+    val pagination: Pagination? = null
 )
 
 // ─── GENERIC RESPONSE ───────────────────────────────────────────────
@@ -365,7 +366,9 @@ data class IssueTreeNode(
 data class ApiResponse<T>(
     val success: Boolean,
     val message: String = "",
-    val data: T? = null
+    val data: T? = null,
+    val pagination: Pagination? = null,
+    val summary: Map<String, Long>? = null
 )
 
 @Serializable

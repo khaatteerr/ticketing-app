@@ -7,27 +7,24 @@ const root = 'src/main/resources/ticketing/';
 function harness() {
   const elements = new Map();
   const get = id => {
-    if (!elements.has(id)) elements.set(id, {
-      value: '', textContent: '', innerHTML: '', style: {},
-      classList: { add() {}, remove() {} },
-      querySelectorAll: () => [], focus() {},
-    });
+    if (!elements.has(id)) elements.set(id, require('./dom-harness.cjs').element());
     return elements.get(id);
   };
   const calls = [];
   let response = { success: true, data: [] };
   const context = vm.createContext({
-    document: { getElementById: get, addEventListener() {}, documentElement: { setAttribute() {} } },
+    document: { createElement: () => require('./dom-harness.cjs').element(), getElementById: get, addEventListener() {}, documentElement: { setAttribute() {} } },
     window: { location: { origin: 'http://localhost', href: '' } },
     localStorage: { getItem: key => key === 'hd_token' ? 'token' : key === 'hd_user' ? JSON.stringify({ username: 'sam', name: 'Sam', role: 'User' }) : null, setItem() {}, removeItem() {} },
-    fetch: async (url, options) => { calls.push({ url, options }); return { ok: response.success, status: 200, json: async () => url.endsWith('/api/users/me') ? { success: true, data: { username: 'sam', name: 'Sam', role: 'User' } } : response }; },
-    console, setTimeout() {}, setInterval() {},
+    fetch: async (url, options) => { calls.push({ url, options }); return { ok: response.success, status: 200, json: async () => url.endsWith('/api/users/me') ? { success: true, data: { username: 'sam', name: 'Sam', role: 'User' } } : { ...response, pagination: {page:1, pageSize:10, total:response.data?.length || 0, totalPages:1} } }; },
+    URLSearchParams, AbortController, console, setTimeout, clearTimeout, setInterval() {},
   });
   return { context, get, calls, respond: value => { response = value; }, run: code => vm.runInContext(code, context) };
 }
 
 function dashboard() {
   const h = harness();
+  h.run(fs.readFileSync(root + 'js/paging.js', 'utf8'));
   h.run(fs.readFileSync(root + 'js/replies.js', 'utf8'));
   h.run(fs.readFileSync(root + 'js/app.js', 'utf8'));
   h.run(fs.readFileSync(root + 'js/dashboard.js', 'utf8'));
@@ -36,6 +33,7 @@ function dashboard() {
 
 async function submitPage() {
   const h = harness();
+  h.run(fs.readFileSync(root + 'js/paging.js', 'utf8'));
   h.run(fs.readFileSync(root + 'js/replies.js', 'utf8'));
   const html = fs.readFileSync(root + 'submit.html', 'utf8');
   for (const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) h.run(match[1]);
@@ -43,23 +41,24 @@ async function submitPage() {
   return h;
 }
 
-test('picker searches active users and distinguishes duplicate display names', () => {
+test('picker requests active matching users from the server and distinguishes duplicate names', async () => {
   const h = dashboard();
-  h.run(`systemUsers = [
-    { id: '1', username: 'sam', name: "Sam O'Neil", email: 'sam@example.test', active: true },
-    { id: '2', username: 'sam2', name: "Sam O'Neil", active: true },
-    { id: '3', username: 'disabled', name: 'Disabled', active: false }
-  ]; allTickets = [{id: 'ticket', assignedTo: 'sam', assignedToName: "Sam O'Neil"}]; currentAssignTicketId = 'ticket'; filterAssignUsers();`);
-  let html = h.get('assignUsersList').innerHTML;
-  assert.equal((html.match(/✓ Current/g) || []).length, 1);
-  assert.ok(!html.includes('disabled'));
-  assert.ok(html.includes("Sam O'Neil"));
-  assert.ok(!html.includes('onclick='));
+  h.respond({success:true, data:[
+    {id:'1', username:'sam', name:"Sam O'Neil", active:true},
+    {id:'2', username:'sam2', name:"Sam O'Neil", active:true}
+  ]});
+  h.run(`allTickets = [{id:'ticket', assignedTo:'sam', assignedToName:"Sam O'Neil"}]; currentAssignTicketId = 'ticket';`);
   h.get('assignSearchInput').value = 'sam@example.test';
-  h.run('filterAssignUsers()');
-  assert.equal(h.get('assignUsersCount').textContent, '1 user');
-  h.get('assignSearchInput').value = 'no match';
-  h.run('filterAssignUsers()');
+  await h.run('loadSystemUsers()');
+  const query = new URL(h.calls[0].url, 'http://localhost').searchParams;
+  assert.equal(query.get('status'), 'active');
+  assert.equal(query.get('search'), 'sam@example.test');
+  assert.equal(query.get('pageSize'), '20');
+  const html = h.get('assignUsersList').innerHTML;
+  assert.equal((html.match(/✓ Current/g) || []).length, 1);
+  assert.ok(!html.includes('onclick='));
+  h.respond({success:true, data:[]});
+  await h.run('loadSystemUsers()');
   assert.match(h.get('assignUsersList').innerHTML, /No users matching/);
 });
 
@@ -75,8 +74,8 @@ test('assignment sends the selected username and leaves dialog open on error', a
 
 test('submit page loads submitted and assigned scopes separately and renders empty state', async () => {
   const h = await submitPage();
-  assert.ok(h.calls.some(c => c.url.endsWith('?scope=submitted')));
-  assert.ok(h.calls.some(c => c.url.endsWith('?scope=assigned')));
+  assert.ok(h.calls.some(c => c.url.includes('scope=submitted')));
+  assert.ok(h.calls.some(c => c.url.includes('scope=assigned')));
   assert.match(h.get('assignedList').innerHTML, /No issues are assigned/);
 });
 

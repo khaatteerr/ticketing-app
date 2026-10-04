@@ -3,14 +3,18 @@
  */
 
 let allDepartments = [];
+let deptPage = 1;
+let deptTotal = 0;
+const searchDepartments = debounce(() => { deptPage = 1; loadDepartmentsData(); });
 
 async function loadDepartmentsData() {
   const grid = document.getElementById('deptGrid');
   grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;"><p>Loading departments...</p></div>';
 
   try {
-    // Single DB/API call for the entire screen
-    const res = await api('/api/departments');
+    // Fetch only the requested, server-filtered page.
+    const res = await remotePage('departments', '/api/departments', {page:deptPage, pageSize:12, search:document.getElementById('deptSearch')?.value.trim()});
+    if (!res) return;
 
     if (!res || !res.success) {
       grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><div class="es-icon">⚠️</div><p>${esc(res?.message || 'Failed to load departments')}</p></div>`;
@@ -18,6 +22,8 @@ async function loadDepartmentsData() {
     }
 
     allDepartments = res.data || [];
+    deptPage = res.pagination.page; deptTotal = res.pagination.total;
+    renderRemotePager('deptPager', res.pagination, page => { deptPage = page; loadDepartmentsData(); });
     renderDepartments();
     updateDeptSummary();
   } catch (err) {
@@ -28,11 +34,7 @@ async function loadDepartmentsData() {
 
 function renderDepartments() {
   const grid = document.getElementById('deptGrid');
-  const search = (document.getElementById('deptSearch')?.value || '').toLowerCase().trim();
-
-  const filtered = allDepartments.filter(d =>
-    !search || d.name.toLowerCase().includes(search)
-  );
+  const filtered = allDepartments;
 
   if (filtered.length === 0) {
     grid.innerHTML = `
@@ -82,7 +84,7 @@ function renderDepartments() {
 
 function updateDeptSummary() {
   const countEl = document.getElementById('totalDeptCount');
-  if (countEl) countEl.textContent = allDepartments.length;
+  if (countEl) countEl.textContent = deptTotal;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

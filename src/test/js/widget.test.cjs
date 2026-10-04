@@ -7,10 +7,7 @@ async function setup({ empty = false, failSubmit = false, unauthorized = false }
   const elements = new Map();
   const calls = [], redirects = [];
   const get = id => {
-    if (!elements.has(id)) elements.set(id, {
-      value: '', hidden: false, disabled: false, options: [], textContent: '',
-      addEventListener() {}, replaceChildren(...items) { this.options = items; this.value = ''; }, add(option) { this.options.push(option); }
-    });
+    if (!elements.has(id)) elements.set(id, require('./dom-harness.cjs').element());
     return elements.get(id);
   };
   const issues = [
@@ -18,40 +15,44 @@ async function setup({ empty = false, failSubmit = false, unauthorized = false }
     { id: 'b', name: 'Login', headId: 'software', headName: 'Software' }
   ];
   const context = vm.createContext({
-    document: { getElementById: get, documentElement: { dataset: {} } },
+    URLSearchParams, AbortController, setTimeout, clearTimeout,
+    document: { createElement: () => require('./dom-harness.cjs').element(), getElementById: get, documentElement: { dataset: {} } },
     localStorage: { getItem: () => 'token', removeItem() {} },
-    window: { location: { replace: path => redirects.push(path) } },
+    window: { location: { pathname:'/widget.html', replace: path => redirects.push(path) } },
     Option: function(text, value) { this.text = text; this.value = value; },
     fetch: async (url, options) => {
       calls.push({ url, options });
+      const parsed = new URL(url, 'http://localhost');
       const failed = failSubmit && options.method === 'POST';
       return { status: unauthorized ? 401 : 200, ok: !failed,
-        json: async () => ({ success: !failed, message: failed ? 'Unavailable' : '', data: url === '/api/users/me' ? { username: 'sam', name: 'Sam', department: 'IT & Support' } : options.method === 'POST' ? { ticketId: 'TKT-123' } : empty ? [] : issues }) };
+        json: async () => ({ success: !failed, message: failed ? 'Unavailable' : '', data: parsed.pathname === '/api/users/me' ? { username: 'sam', name: 'Sam', department: 'IT & Support' } : options.method === 'POST' ? { ticketId: 'TKT-123' } : empty ? [] : parsed.pathname === '/api/issue-heads' ? [{id:'hardware', name:'Hardware'}, {id:'software', name:'Software'}] : issues.filter(i => i.headId === parsed.searchParams.get('headId')), pagination:{page:1,pageSize:25,total:empty ? 0 : 2,totalPages:1} }) };
     },
   });
+  vm.runInContext(fs.readFileSync('src/main/resources/ticketing/js/paging.js', 'utf8'), context);
   vm.runInContext(source, context);
   await new Promise(resolve => setImmediate(resolve));
   const run = code => vm.runInContext(code, context);
-  const select = () => { get('issueHead').value = 'hardware'; run('changeWidgetHead()'); get('subIssue').value = 'a'; run('changeWidgetIssue()'); };
+  const select = async () => { get('issueHead').value = 'hardware'; await run('changeWidgetHead()'); get('subIssue').value = 'a'; run('changeWidgetIssue()'); };
   return { get, calls, redirects, run, select };
 }
 
 test('widget loads department issues, groups heads and reveals submit only after selection', async () => {
   const h = await setup();
-  assert.ok(h.calls.some(c => c.url === '/api/sub-issues?department=IT%20%26%20Support'));
+  assert.ok(h.calls.some(c => c.url.startsWith('/api/issue-heads?') && new URL(c.url, 'http://localhost').searchParams.get('department') === 'IT & Support'));
+  assert.ok(!h.calls.some(c => c.url.startsWith('/api/sub-issues')));
   assert.equal(h.get('issueHead').options.length, 3);
   assert.equal(h.get('quickSubmit').hidden, true);
-  h.select();
+  await h.select();
   assert.equal(h.get('subIssue').options.length, 2);
   assert.equal(h.get('quickSubmit').hidden, false);
   h.get('issueHead').value = 'software';
-  h.run('changeWidgetHead()');
+  await h.run('changeWidgetHead()');
   assert.equal(h.get('quickSubmit').hidden, true);
   assert.equal(h.get('subIssue').value, '');
 });
 test('submit uses selected issue and resets with ticket reference; prevents double clicks', async () => {
   const h = await setup();
-  h.select();
+  await h.select();
   const first = h.run('submitWidgetTicket({preventDefault(){}})');
   const second = h.run('submitWidgetTicket({preventDefault(){}})');
   await Promise.all([first, second]);
@@ -63,7 +64,7 @@ test('submit uses selected issue and resets with ticket reference; prevents doub
 });
 test('failed submit retains selected issue for retry', async () => {
   const h = await setup({ failSubmit: true });
-  h.select();
+  await h.select();
   await h.run('submitWidgetTicket({preventDefault(){}})');
   assert.equal(h.get('subIssue').value, 'a');
   assert.equal(h.get('quickSubmit').disabled, false);

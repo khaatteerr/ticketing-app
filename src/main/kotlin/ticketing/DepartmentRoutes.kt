@@ -16,8 +16,10 @@ fun Route.departmentRoutes() {
             // GET /api/departments — any logged-in user (used to populate filters/dropdowns)
             get {
 
-                val all = departments.find().toList().map { it.toPublic() }
-                call.respond(ApiResponse(success = true, data = all))
+                val params = call.request.queryParameters
+                call.respond(departments.pageResponse(
+                    PageQuery.parse(params, setOf("name", "ticketCount", "activeTicketCount", "memberCount")),
+                    queryFilter(params, listOf("name"))) { it.toPublic() })
             }
         }
     }

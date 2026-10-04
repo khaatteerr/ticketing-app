@@ -3,18 +3,26 @@
  */
 
 let allUsers = [];
+let userPage = 1;
+let userSummary = {};
+const searchUsers = debounce(() => changeUserFilters());
+function changeUserFilters() { userPage = 1; loadUsers(); }
+
 
 async function loadUsers() {
   const tbody = document.getElementById('userBody');
   tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Loading users...</p></div></td></tr>`;
 
   try {
-    const res = await api('/api/users');
+    const res = await remotePage('users', '/api/users', { page: userPage, pageSize: 25, summary: true, search: document.getElementById('userSearch')?.value.trim(), role: document.getElementById('filterRole')?.value, status: document.getElementById('filterStatus')?.value });
+    if (!res) return;
     if (!res || !res.success) {
       tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">⚠️</div><p>${esc(res?.message || 'Access denied or error loading users.')}</p></div></td></tr>`;
       return;
     }
     allUsers = res.data || [];
+    userPage = res.pagination.page; userSummary = res.summary || {};
+    renderRemotePager('userPager', res.pagination, page => { userPage = page; loadUsers(); });
     renderUsers();
     updateUserStats();
   } catch (err) {
@@ -23,28 +31,9 @@ async function loadUsers() {
   }
 }
 
-function getFilteredUsers() {
-  const q = (document.getElementById('userSearch')?.value || '').toLowerCase().trim();
-  const roleFilter = document.getElementById('filterRole')?.value || '';
-  const statusFilter = document.getElementById('filterStatus')?.value || '';
-
-  return allUsers.filter(u => {
-    const matchesSearch = !q ||
-      (u.name && u.name.toLowerCase().includes(q)) ||
-      (u.username && u.username.toLowerCase().includes(q)) ||
-      (u.department && u.department.toLowerCase().includes(q)) ||
-      (u.email && u.email.toLowerCase().includes(q));
-
-    const matchesRole = !roleFilter || u.role === roleFilter;
-    const matchesStatus = !statusFilter || (statusFilter === 'active' ? u.active : !u.active);
-
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-}
-
 function renderUsers() {
   const tbody = document.getElementById('userBody');
-  const filtered = getFilteredUsers();
+  const filtered = allUsers;
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">👥</div><p>No matching users found.</p></div></td></tr>`;
@@ -107,10 +96,10 @@ function updateUserStats() {
   const agentEl = document.getElementById('cnt-agents');
   const usersEl = document.getElementById('cnt-standard-users');
 
-  if (totalEl) totalEl.textContent = allUsers.length;
-  if (adminEl) adminEl.textContent = allUsers.filter(u => u.role === 'Admin').length;
-  if (agentEl) agentEl.textContent = allUsers.filter(u => u.role === 'Support Agent').length;
-  if (usersEl) usersEl.textContent = allUsers.filter(u => u.role === 'User').length;
+  if (totalEl) totalEl.textContent = Object.values(userSummary).reduce((sum, count) => sum + count, 0);
+  if (adminEl) adminEl.textContent = userSummary.Admin || 0;
+  if (agentEl) agentEl.textContent = userSummary['Support Agent'] || 0;
+  if (usersEl) usersEl.textContent = userSummary.User || 0;
 }
 
 function openEditUserRole(id) {

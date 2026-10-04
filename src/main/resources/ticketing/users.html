@@ -6,6 +6,8 @@
   <title>HelpDesk Pro — User Management</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
+<link rel="stylesheet" href="css/paging.css"/>
+<script src="js/paging.js"></script>
 </head>
 <body>
 
@@ -91,11 +93,11 @@
       <div class="filters-row" style="grid-template-columns: 2fr 1fr 1fr;">
         <div class="filter-group">
           <label>Search Users</label>
-          <input type="text" id="userSearch" placeholder="Search name, username, department, email..." oninput="renderUsers()"/>
+          <input type="text" id="userSearch" placeholder="Search name, username, department, email..." oninput="searchUsers()"/>
         </div>
         <div class="filter-group">
           <label>Role</label>
-          <select id="filterRole" onchange="renderUsers()">
+          <select id="filterRole" onchange="changeUserFilters()">
             <option value="">All Roles</option>
             <option value="Admin">Admin</option>
             <option value="Support Agent">Support Agent</option>
@@ -104,7 +106,7 @@
         </div>
         <div class="filter-group">
           <label>Status</label>
-          <select id="filterStatus" onchange="renderUsers()">
+          <select id="filterStatus" onchange="changeUserFilters()">
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
@@ -138,6 +140,7 @@
           <tbody id="userBody"></tbody>
         </table>
       </div>
+      <div id="userPager" class="remote-pager"></div>
     </div>
   </div>
 </div>

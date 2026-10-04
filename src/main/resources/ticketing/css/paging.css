@@ -1,0 +1,4 @@
+.remote-pager { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:12px 0; color:var(--text3, var(--muted)); font-size:12px; }
+.remote-pager button { cursor:pointer; padding:5px 9px; border:1px solid var(--border); border-radius:6px; background:var(--bg3, var(--input)); color:var(--text); }
+.remote-pager button:disabled { opacity:.4; cursor:default; }
+input[type=search] { max-width:100%; box-sizing:border-box; margin-bottom:6px; padding:7px; background:var(--bg3, var(--input)); color:var(--text); border:1px solid var(--border); border-radius:6px; }

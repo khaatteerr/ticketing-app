@@ -18,8 +18,9 @@ fun Route.categoryRoutes() {
 
             // GET /api/categories — all users
             get {
-                val all = categories.find().toList().map { it.toPublic() }
-                call.respond(ApiResponse(success = true, data = all))
+                call.respond(categories.pageResponse(
+                    PageQuery.parse(call.request.queryParameters, setOf("name")),
+                    queryFilter(call.request.queryParameters, listOf("name"))) { it.toPublic() })
             }
 
             // POST /api/categories — Admin only

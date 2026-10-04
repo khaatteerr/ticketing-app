@@ -32,14 +32,18 @@ function setWidgetOptions(select, placeholder, options) {
   options.forEach(option => select.add(new Option(option.name, option.id)));
 }
 
-function changeWidgetHead() {
-  const headId = widgetEl('issueHead').value;
-  const issues = widgetIssues.filter(issue => issue.headId === headId);
-  setWidgetOptions(widgetEl('subIssue'), headId ? 'Select a sub-issue' : 'Select an issue head first', issues);
-  widgetEl('subIssue').disabled = !headId;
+async function changeWidgetHead() {
+  widgetEl('subIssue').value = '';
+  widgetIssues = [];
   changeWidgetIssue();
+  const headId = widgetEl('issueHead').value;
+  widgetEl('subIssue').disabled = !headId;
+  if (headId) await widgetSubSelector.reset();
+  else { widgetSubSelector?.cancel(); setWidgetOptions(widgetEl('subIssue'), 'Select an issue head first', []); }
 }
 
+let widgetHeadSelector;
+let widgetSubSelector;
 function changeWidgetIssue() {
   const issue = selectedWidgetIssue();
   widgetEl('quickSubmit').hidden = !issue;
@@ -67,12 +71,22 @@ async function loadWidget() {
   try {
     widgetProfile = await widgetApi('/api/users/me');
     widgetEl('widgetUser').textContent = `${widgetProfile.name || widgetProfile.username} · ${widgetProfile.department || 'General'}`;
-    const query = widgetProfile.department ? `?department=${encodeURIComponent(widgetProfile.department)}` : '';
-    widgetIssues = await widgetApi(`/api/sub-issues${query}`);
-    const heads = [...new Map(widgetIssues.map(issue => [issue.headId, { id: issue.headId, name: issue.headName }])).values()];
-    setWidgetOptions(widgetEl('issueHead'), heads.length ? 'Select an issue head' : 'No issues available', heads);
-    widgetEl('issueHead').disabled = !heads.length;
-    if (!heads.length) widgetMessage('No issue types are available for your department. Use the full form below to describe your issue.');
+    widgetHeadSelector = remoteSelect('issueHead', '/api/issue-heads', {
+      params: () => ({department:widgetProfile.department}), placeholder:'Select an issue head',
+      onData: rows => {
+        widgetEl('issueHead').disabled = !rows.length && !widgetEl('issueHead').value;
+        if (!rows.length) widgetMessage('No matching issue heads. Search again or use the full form.');
+      }
+    });
+    widgetSubSelector = remoteSelect('subIssue', '/api/sub-issues', {
+      params: () => ({department:widgetProfile.department, headId:widgetEl('issueHead').value || 'none'}), placeholder:'Select a sub-issue',
+      onData: rows => {
+        const selected = selectedWidgetIssue();
+        widgetIssues = selected && !rows.some(row => row.id === selected.id) ? [selected, ...rows] : rows;
+      }
+    });
+    await widgetHeadSelector.reset();
+
   } catch (error) {
     widgetMessage(error.message || 'Cannot connect. Please try again.', 'error');
     widgetEl('widgetRetry').hidden = false;

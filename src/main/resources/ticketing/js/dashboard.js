@@ -12,145 +12,54 @@ let currentAssignTicketId = null;
 let assignmentSaving = false;
 let assignmentUsersError = false;
 
+let ticketMeta = { page: 1, pageSize: 25, total: 0, totalPages: 1 };
+let ticketStats = {};
+let assignmentMeta;
+function ticketParams() {
+  return { page: currentPage, pageSize: document.getElementById('entriesCount')?.value || 25,
+    search: document.getElementById('searchInput')?.value.trim(), status: activeStatus === 'all' ? '' : activeStatus,
+    priority: document.getElementById('filterPriority')?.value, department: document.getElementById('filterDepartment')?.value,
+    assignedTo: document.getElementById('filterAssigned')?.value, sort: sortField, order: sortDir === -1 ? 'desc' : 'asc' };
+}
+const searchTickets = debounce(() => changeTicketFilters());
+function changeTicketFilters() { currentPage = 1; loadTickets(); }
 async function loadTickets() {
   const tbody = document.getElementById('ticketBody');
-  tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><p>Loading tickets...</p></div></td></tr>`;
-
+  tbody.innerHTML = '<tr><td colspan="11">Loading tickets...</td></tr>';
   try {
-    const res = await api('/api/tickets');
-    if (!res || !res.success) {
-      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="es-icon">⚠️</div><p>${esc(res?.message || 'Failed to load tickets')}</p></div></td></tr>`;
-      return;
-    }
-
-    allTickets = res.data || [];
-    addLog('Tickets loaded', 'info');
-    populateDepartmentFilter();
-    populateDeptSelect();
-    await loadSystemUsers();
+    const res = await remotePage('tickets', '/api/tickets', ticketParams());
+    if (!res) return;
+    allTickets = res.data || []; ticketMeta = res.pagination; currentPage = ticketMeta.page;
     renderTable();
-    updateStats();
-  } catch (err) {
-    console.error('Error loading tickets:', err);
-    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="es-icon">❌</div><p>Failed to connect to ticket service.</p></div></td></tr>`;
-  }
+    const stats = await remotePage('ticket-stats', '/api/stats');
+    if (stats) { ticketStats = stats.data; updateStats(); }
+  } catch (error) { tbody.innerHTML = `<tr><td colspan="11">${esc(error.message)}</td></tr>`; }
 }
-
-async function loadSystemUsers() {
+async function loadSystemUsers(page = 1) {
   try {
-    const res = await api('/api/users');
-    assignmentUsersError = !res?.success;
-    if (res?.success) {
-      systemUsers = res.data || [];
-      populateAssignedFilter();
-      populateModalAssignedSelect();
-    }
-  } catch (e) {
-    assignmentUsersError = true;
-    console.warn('Failed to load system users', e);
-  }
+    const res = await remotePage('assignment-users', '/api/users', { page, pageSize: 20, status: 'active', search: document.getElementById('assignSearchInput')?.value.trim() });
+    if (!res) return;
+    assignmentUsersError = false; systemUsers = res.data; assignmentMeta = res.pagination;
+    filterAssignUsers();
+    renderRemotePager('assignPager', assignmentMeta, loadSystemUsers);
+  } catch { assignmentUsersError = true; filterAssignUsers(); }
 }
-
-function populateAssignedFilter() {
-  const el = document.getElementById('filterAssigned');
-  if (!el) return;
-  const current = el.value;
-  el.innerHTML = '<option value="">All</option><option value="Unassigned">Unassigned</option>';
-  systemUsers.forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = u.username;
-    opt.textContent = `${u.name} (@${u.username})`;
-    el.appendChild(opt);
-  });
-  if (current) el.value = current;
-}
-
-function populateModalAssignedSelect() {
-  const el = document.getElementById('fAssigned');
-  if (!el) return;
-  const cur = el.value;
-  el.innerHTML = '<option value="Unassigned">Unassigned</option>';
-  systemUsers.filter(u => u.active !== false).forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = u.username;
-    opt.textContent = `${u.name} (@${u.username}) [${u.department || 'General'}]`;
-    el.appendChild(opt);
-  });
-  if (cur) el.value = cur;
-}
-
-function populateDepartmentFilter() {
-  const filterDept = document.getElementById('filterDepartment');
-  if (!filterDept) return;
-  const current = filterDept.value;
-  filterDept.innerHTML = '<option value="">All Departments</option>';
-
-  const deptNames = [...new Set(allTickets.map(t => t.submittedByDepartment).filter(Boolean))].sort();
-
-  deptNames.forEach(d => {
-    const opt = document.createElement('option');
-    opt.value = d;
-    opt.textContent = d;
-    filterDept.appendChild(opt);
-  });
-  if (current) filterDept.value = current;
-}
-
-function populateDeptSelect() {
-  const el = document.getElementById('fDepartment');
-  if (!el) return;
-  const cur = el.value;
-  el.innerHTML = '<option value="">Select department...</option>';
-
-  const deptNames = [...new Set([
-    ...allTickets.map(t => t.submittedByDepartment).filter(Boolean),
-    'General IT Support'
-  ])].sort();
-
-  deptNames.forEach(d => {
-    const opt = document.createElement('option');
-    opt.value = d;
-    opt.textContent = `🏢 ${d}`;
-    el.appendChild(opt);
-  });
-  if (cur) el.value = cur;
-}
-
-function getFiltered() {
-  const q    = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-  const pri  = document.getElementById('filterPriority')?.value || '';
-  const dept = document.getElementById('filterDepartment')?.value || '';
-  const asg  = document.getElementById('filterAssigned')?.value || '';
-
-  return allTickets
-    .filter(t =>
-      (activeStatus === 'all' || t.status === activeStatus) &&
-      (!q || 
-        (t.title && t.title.toLowerCase().includes(q)) || 
-        (t.ticketId && t.ticketId.toLowerCase().includes(q)) || 
-        (t.submittedBy && t.submittedBy.toLowerCase().includes(q)) ||
-        (t.submittedByName && t.submittedByName.toLowerCase().includes(q)) ||
-        (t.submittedByDepartment && t.submittedByDepartment.toLowerCase().includes(q)) ||
-        (t.assignedTo && t.assignedTo.toLowerCase().includes(q)) ||
-        (t.assignedToName && t.assignedToName.toLowerCase().includes(q))
-      ) &&
-      (!pri || t.priority === pri) &&
-      (!dept || (t.submittedByDepartment && t.submittedByDepartment.toLowerCase() === dept.toLowerCase())) &&
-      (!asg || t.assignedTo === asg || t.assignedToName === asg)
-    )
-    .sort((a, b) => {
-      const va = a[sortField] ?? '';
-      const vb = b[sortField] ?? '';
-      return va < vb ? -sortDir : va > vb ? sortDir : 0;
-    });
+const searchAssignUsers = debounce(() => loadSystemUsers(1));
+function populateDeptSelect() {} // Remote selectors are initialized once, not per ticket page.
+function getFiltered() { return allTickets; } // Exports explicitly contain the current page.
+function initTicketSelectors() {
+  remoteSelect('filterDepartment', '/api/departments', { value: d => d.name, placeholder: 'All departments' }).load();
+  remoteSelect('fDepartment', '/api/departments', { value: d => d.name, placeholder: 'Select department', fixed: [{value:'General IT Support',label:'General IT Support'}] }).load();
+  remoteSelect('filterAssigned', '/api/users', { value: u => u.username, label: u => `${u.name} (@${u.username})`, placeholder: 'All users', fixed: [{value:'Unassigned',label:'Unassigned'}] }).load();
+  remoteSelect('fAssigned', '/api/users', { params: () => ({status:'active'}), value: u => u.username, label: u => `${u.name} (@${u.username})`, placeholder: 'Select assignee', fixed: [{value:'Unassigned',label:'Unassigned'}] }).load();
 }
 
 function renderTable() {
-  const n     = parseInt(document.getElementById('entriesCount')?.value) || 10;
+  const n = ticketMeta.pageSize;
   const items = getFiltered();
-  const pages = Math.max(1, Math.ceil(items.length / n));
+  const pages = ticketMeta.totalPages;
   if (currentPage > pages) currentPage = 1;
-  const slice = items.slice((currentPage - 1) * n, currentPage * n);
+  const slice = items;
   const tbody = document.getElementById('ticketBody');
   if (!tbody) return;
 
@@ -201,12 +110,12 @@ function renderTable() {
     `).join('');
   }
 
-  const start = items.length ? (currentPage - 1) * n + 1 : 0;
-  const end   = Math.min(currentPage * n, items.length);
+  const start = ticketMeta.total ? (currentPage - 1) * n + 1 : 0;
+  const end   = Math.min(currentPage * n, ticketMeta.total);
   const infoEl = document.getElementById('tableInfo');
   if (infoEl) {
     infoEl.textContent = items.length
-      ? `Showing ${start} to ${end} of ${items.length} entries`
+      ? `Showing ${start} to ${end} of ${ticketMeta.total} entries`
       : 'No entries';
   }
 
@@ -222,7 +131,7 @@ function renderPagination(pages) {
     const b = document.createElement('div');
     b.className = 'page-btn' + (active ? ' active' : '') + (disabled ? ' disabled' : '');
     b.textContent = lbl;
-    if (!disabled) b.onclick = () => { currentPage = p; renderTable(); };
+    if (!disabled) b.onclick = () => { currentPage = p; loadTickets(); };
     pg.appendChild(b);
   };
 
@@ -242,7 +151,7 @@ function sortBy(f) {
     sortField = f;
     sortDir = 1;
   }
-  renderTable();
+  currentPage = 1; loadTickets();
 }
 
 function filterByStatus(s, el) {
@@ -250,7 +159,7 @@ function filterByStatus(s, el) {
   currentPage = 1;
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
-  renderTable();
+  currentPage = 1; loadTickets();
 }
 
 function clearFilters() {
@@ -263,21 +172,13 @@ function clearFilters() {
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
   const allCard = document.querySelector('[data-status="all"]');
   if (allCard) allCard.classList.add('active');
-  renderTable();
+  currentPage = 1; loadTickets();
 }
 
 function updateStats() {
-  const cnt = s => allTickets.filter(t => t.status === s).length;
-  const setTxt = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  };
-  setTxt('cnt-all', allTickets.length);
-  setTxt('cnt-open', cnt('Open'));
-  setTxt('cnt-inprogress', cnt('In Progress'));
-  setTxt('cnt-pending', cnt('Pending'));
-  setTxt('cnt-resolved', cnt('Resolved'));
-  setTxt('cnt-closed', cnt('Closed'));
+  for (const [id, key] of Object.entries({all:'total', open:'open', inprogress:'inProgress', pending:'pending', resolved:'resolved', closed:'closed'})) {
+    const element = document.getElementById(`cnt-${id}`); if (element) element.textContent = ticketStats[key] ?? 0;
+  }
 }
 
 // ══ MODALS: CREATE & EDIT TICKET ══
@@ -302,11 +203,11 @@ function openEditTicket(id) {
   document.getElementById('fDesc').value         = t.description || '';
   document.getElementById('fPriority').value     = t.priority;
   document.getElementById('fStatus').value       = t.status;
-  document.getElementById('fAssigned').value     = t.assignedTo || 'Unassigned';
+  setRemoteValue('fAssigned', t.assignedTo || 'Unassigned', t.assignedToName || t.assignedTo || 'Unassigned');
   populateDeptSelect();
   setTimeout(() => {
     const deptEl = document.getElementById('fDepartment');
-    if (deptEl) deptEl.value = t.submittedByDepartment || t.category || '';
+    if (deptEl) setRemoteValue('fDepartment', t.submittedByDepartment || t.category || '');
   }, 10);
   openModal('ticketModal');
 }
@@ -317,7 +218,7 @@ async function saveTicket() {
   const department  = document.getElementById('fDepartment').value;
   const priority    = document.getElementById('fPriority').value;
   const status      = document.getElementById('fStatus').value;
-  const assignedTo  = document.getElementById('fAssigned').value;
+  const assignedTo  = document.getElementById('fAssigned').value || 'Unassigned';
   const description = document.getElementById('fDesc').value.trim();
 
   if (!title)      { toast('Title is required', 'error'); return; }
@@ -451,22 +352,15 @@ async function openAssignModal(ticketId) {
   document.getElementById('assignSearchInput').focus();
   document.getElementById('assignUsersList').innerHTML = '<div class="empty-state">Loading users...</div>';
   await loadSystemUsers();
-  filterAssignUsers();
 }
 
 function filterAssignUsers() {
   const t = allTickets.find(x => x.id === currentAssignTicketId);
-  const q = (document.getElementById('assignSearchInput')?.value || '').toLowerCase().trim();
-  const filtered = systemUsers.filter(u => u.active !== false).filter(u =>
-    !q ||
-    (u.email && u.email.toLowerCase().includes(q)) ||
-    (u.name && u.name.toLowerCase().includes(q)) ||
-    (u.username && u.username.toLowerCase().includes(q)) ||
-    (u.department && u.department.toLowerCase().includes(q))
-  );
+  const q = document.getElementById('assignSearchInput')?.value || '';
+  const filtered = systemUsers;
 
   const countEl = document.getElementById('assignUsersCount');
-  if (countEl) countEl.textContent = `${filtered.length} user${filtered.length !== 1 ? 's' : ''}`;
+  if (countEl) countEl.textContent = `${assignmentMeta?.total ?? filtered.length} users`;
 
   const list = document.getElementById('assignUsersList');
   if (!list) return;
@@ -521,7 +415,7 @@ async function assignUser(ticketId, username, name) {
     toast(`Ticket assigned to ${name}`, 'success');
     addLog(`Ticket assigned to ${name}`, 'edit');
     closeModal('modalAssign');
-    renderTable();
+    loadTickets();
   } else {
     toast(res?.message || 'Error assigning ticket', 'error');
   }
@@ -540,7 +434,7 @@ async function confirmUnassign() {
     if (t) { t.assignedTo = 'Unassigned'; t.assignedToName = null; }
     toast('Ticket unassigned', 'info');
     closeModal('modalAssign');
-    renderTable();
+    loadTickets();
   } else {
     toast(res?.message || 'Error unassigning ticket', 'error');
   }
@@ -548,6 +442,7 @@ async function confirmUnassign() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initSidebar('dashboard');
+  initTicketSelectors();
   loadTickets();
 });
 

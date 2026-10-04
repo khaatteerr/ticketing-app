@@ -21,8 +21,7 @@ fun Route.issueRoutes() {
 
             // GET /api/issue-heads — all authenticated users
             get {
-                val all = issueHeads.find().toList().map { it.toPublic() }
-                call.respond(ApiResponse(success = true, data = all))
+                call.respond(issueHeadPage(call.request.queryParameters))
             }
 
             // POST /api/issue-heads — Admin only
@@ -76,13 +75,10 @@ fun Route.issueRoutes() {
             // GET /api/sub-issues?department=<name> — all authenticated users
             // If department query param is provided, filter to that dept only
             get {
-                val deptFilter = call.request.queryParameters["department"]
-                val all = if (!deptFilter.isNullOrBlank()) {
-                    subIssues.find(SubIssue::department eq deptFilter).toList()
-                } else {
-                    subIssues.find().toList()
-                }
-                call.respond(ApiResponse(success = true, data = all.map { it.toPublic() }))
+                val params = call.request.queryParameters
+                call.respond(subIssues.pageResponse(
+                    PageQuery.parse(params, setOf("name", "department", "priority", "headName")),
+                    queryFilter(params, listOf("name", "headName", "department", "priority", "description"), mapOf("department" to "department", "headId" to "headId"))) { it.toPublic() })
             }
 
             // POST /api/sub-issues — Admin only
@@ -184,18 +180,21 @@ fun Route.issueRoutes() {
         }
 
         // ── TREE VIEW ─────────────────────────────────────────────────────────
-        // GET /api/issues/tree — returns all heads with their nested sub-issues
+        // GET /api/issues/tree — paged heads, with ten paged children per head
         get("/api/issues/tree") {
-            val heads = issueHeads.find().toList().map { it.toPublic() }
-            val allSubs = subIssues.find().toList().map { it.toPublic() }
-
-            val tree = heads.map { head ->
-                IssueTreeNode(
-                    head = head,
-                    subIssues = allSubs.filter { it.headId == head.id }
-                )
+            val heads = issueHeadPage(call.request.queryParameters)
+            val tree = heads.data.orEmpty().map { head ->
+                val children = subIssues.pageResponse(PageQuery.parse(io.ktor.http.parametersOf("pageSize", "10"), setOf("name")),
+                    queryFilter(call.request.queryParameters, listOf("name", "headName", "department", "priority", "description"), extra = listOf(SubIssue::headId eq head.id))) { it.toPublic() }
+                IssueTreeNode(head, children.data.orEmpty(), children.pagination)
             }
-            call.respond(ApiResponse(success = true, data = tree))
+            call.respond(ApiResponse(success = true, data = tree, pagination = heads.pagination))
+        }
+        get("/api/issues/stats") {
+            val mapped = subIssues.aggregate<org.bson.Document>(listOf(
+                org.bson.Document("\$group", org.bson.Document("_id", "\$department")), org.bson.Document("\$count", "total")
+            )).first()?.get("total") as? Number
+            call.respond(ApiResponse(success = true, data = mapOf("heads" to issueHeads.countDocuments(), "subs" to subIssues.countDocuments(), "departments" to (mapped?.toLong() ?: 0))))
         }
     }
 }

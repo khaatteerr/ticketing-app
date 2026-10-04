@@ -3,9 +3,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function setup({ clipboard, legacyCopy = false, launchThrows = false } = {}) {
+function setup({ clipboard, legacyCopy = false, launchThrows = false, windowsLauncher = false } = {}) {
   const elements = new Map();
   const calls = [];
+  const preferences = new Map([['hd_vnc_windows_launcher', String(windowsLauncher)]]);
   const get = id => {
     if (!elements.has(id)) elements.set(id, {
       value: '', textContent: '', href: '',
@@ -16,12 +17,13 @@ function setup({ clipboard, legacyCopy = false, launchThrows = false } = {}) {
   };
   const context = vm.createContext({
     URL, navigator: { clipboard },
+    localStorage: { getItem: key => preferences.get(key), setItem: (key, value) => preferences.set(key, value) },
     document: { getElementById: get, addEventListener() {}, execCommand: () => { calls.push('legacyCopy'); return legacyCopy; } },
     allTickets: [{ id: '1', ticketId: 'TKT-1', title: 'Printer', ip: '192.168.1.20' }],
     openModal: id => calls.push(id), toast: msg => calls.push(msg),
   });
   vm.runInContext(fs.readFileSync('src/main/resources/ticketing/js/vnc.js', 'utf8'), context);
-  return { run: code => vm.runInContext(code, context), get, calls };
+  return { run: code => vm.runInContext(code, context), get, calls, preferences };
 }
 
 test('only IP addresses are accepted, including IPv6 and mapped IPv4', () => {
@@ -74,4 +76,24 @@ test('missing or invalid ticket cannot trigger external app', () => {
   const h = setup();
   h.run("openTicketVnc('missing'); allTickets[0].ip = 'javascript:alert(1)'; openTicketVnc('1');");
   assert.ok(!h.calls.includes('launch'));
+});
+
+
+test('Windows launcher uses the selected ticket IP and persists opt-in', () => {
+  const h = setup({ windowsLauncher: true });
+  h.run("openTicketVnc('1')");
+  assert.equal(h.get('vncLaunchLink').href, 'helpdesk-vnc://192.168.1.20');
+  assert.equal(h.get('vncWindowsLauncher').checked, true);
+  h.get('vncWindowsLauncher').checked = false;
+  h.run('setWindowsVncLauncher(false)');
+  assert.equal(h.get('vncLaunchLink').href, 'com.realvnc.vncviewer.connect://192.168.1.20');
+  assert.equal(h.preferences.get('hd_vnc_windows_launcher'), 'false');
+});
+
+test('Windows handoff preserves bracketed IPv6 and updates for a different ticket', () => {
+  const h = setup({ windowsLauncher: true });
+  h.run("allTickets.push({id:'2', ticketId:'TKT-2', title:'Network', ip:'2001:db8::5'}); openTicketVnc('2')");
+  assert.equal(h.get('vncLaunchLink').href, 'helpdesk-vnc://[2001:db8::5]');
+  h.run("openTicketVnc('1')");
+  assert.equal(h.get('vncLaunchLink').href, 'helpdesk-vnc://192.168.1.20');
 });

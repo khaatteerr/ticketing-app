@@ -8,6 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.bson.types.ObjectId
+import com.mongodb.client.model.Filters
 import org.litote.kmongo.setValue
 
 fun Route.userRoutes() {
@@ -24,8 +25,20 @@ fun Route.userRoutes() {
                     )
                     return@get
                 }
-                val all = users.find().toList().map { it.toPublic() }
-                call.respond(ApiResponse(success = true, data = all))
+                val params = call.request.queryParameters
+                val extra = mutableListOf<org.bson.conversions.Bson>()
+                when (params["status"]) {
+                    "active" -> extra += Filters.ne("active", false)
+                    "suspended" -> extra += Filters.eq("active", false)
+                }
+                if (params["recentSync"] == "true") {
+                    val names = AdSyncState.lastNewUsers
+                    extra += Filters.`in`("username", names)
+                }
+                val filter = queryFilter(params, listOf("name", "username", "department", "email"), mapOf("role" to "role", "department" to "department", "source" to "source"), extra)
+                val page = PageQuery.parse(params, setOf("name", "username", "department", "role", "createdAt", "lastSyncedAt"))
+                val result = users.pageResponse(page, filter) { it.toPublic() }
+                call.respond(if (params["summary"] == "true") result.copy(summary = users.groupCounts("role")) else result)
             }
 
             // GET /api/users/me — current user profile

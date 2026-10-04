@@ -17,46 +17,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btn) btn.style.display = 'none';
   }
 
+  ['subDept', 'editSubDept'].forEach(id => remoteSelect(id, '/api/departments', {value:d=>d.name, placeholder:'Select department...'}).load());
   await loadTreeData();
 });
 
 /* ── Data loading ──────────────────────────────────────────── */
+let issuePage = 1;
+const searchIssues = debounce(() => { issuePage = 1; loadTreeData(); });
 async function loadTreeData() {
-  const [treeRes, deptRes] = await Promise.all([
-    api('/api/issues/tree'),
-    api('/api/departments')
-  ]);
-
-  treeData = treeRes?.data ?? [];
-  departments = deptRes?.data ?? [];
-
-  // Populate department dropdown in Add and Edit Sub modals
-  ['subDept', 'editSubDept'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (sel) {
-      sel.innerHTML = '<option value="">Select department...</option>';
-      departments.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.name;
-        opt.textContent = d.name;
-        sel.appendChild(opt);
-      });
+  try {
+    const treeRes = await remotePage('issues', '/api/issues/tree', {page:issuePage, pageSize:5, search:document.getElementById('searchInput')?.value.trim()});
+    if (!treeRes) return;
+    treeData = treeRes.data; issuePage = treeRes.pagination.page;
+    renderRemotePager('issuePager', treeRes.pagination, page => { issuePage = page; loadTreeData(); });
+    renderTree();
+    const stats = await remotePage('issue-stats', '/api/issues/stats');
+    if (stats) {
+      document.getElementById('statHeads').textContent = stats.data.heads;
+      document.getElementById('statSubs').textContent = stats.data.subs;
+      document.getElementById('statDepts').textContent = stats.data.departments;
     }
-  });
-
-  // Update stats
-  const totalSubs = treeData.reduce((sum, n) => sum + (n.subIssues?.length ?? 0), 0);
-  const mappedDepts = new Set();
-  treeData.forEach(n => (n.subIssues ?? []).forEach(s => mappedDepts.add(s.department)));
-
-  const hEl = document.getElementById('statHeads');
-  const sEl = document.getElementById('statSubs');
-  const dEl = document.getElementById('statDepts');
-  if (hEl) hEl.textContent = treeData.length;
-  if (sEl) sEl.textContent = totalSubs;
-  if (dEl) dEl.textContent = mappedDepts.size;
-
-  renderTree();
+  } catch (error) { document.getElementById('treeContainer').textContent = error.message; }
+}
+async function loadSubPage(headId, page) {
+  try {
+    const res = await remotePage(`sub-${headId}`, '/api/sub-issues', {headId, page, pageSize:10, search:document.getElementById('searchInput')?.value.trim()});
+    const node = treeData.find(node => node.head.id === headId);
+    if (!res || !node) return;
+    node.subIssues = res.data; node.pagination = res.pagination; renderTree();
+  } catch (error) { toast(error.message, 'error'); }
 }
 
 /* ── Render tree ───────────────────────────────────────────── */
@@ -67,17 +56,7 @@ function renderTree() {
 
   const isAdmin = user && user.role === 'Admin';
 
-  const filtered = treeData.filter(node => {
-    if (!q) return true;
-    return node.head.name.toLowerCase().includes(q) ||
-           (node.head.description && node.head.description.toLowerCase().includes(q)) ||
-           (node.subIssues ?? []).some(s =>
-             s.name.toLowerCase().includes(q) ||
-             s.department.toLowerCase().includes(q) ||
-             (s.priority && s.priority.toLowerCase().includes(q)) ||
-             (s.description && s.description.toLowerCase().includes(q))
-           );
-  });
+  const filtered = treeData;
 
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="es-icon">🎯</div><p>No issues found matching your criteria</p></div>';
@@ -111,6 +90,7 @@ function renderTree() {
           ` : ''}
         </div>
       </div>
+      <div class="remote-pager" id="subPager-${head.id}"></div>
       <div class="sub-list">
         ${subs.length === 0
           ? '<span class="empty-sub">No sub-issues yet for this head.</span>'
@@ -131,6 +111,7 @@ function renderTree() {
   });
 
   container.appendChild(tree);
+  treeData.forEach(node => renderRemotePager(`subPager-${node.head.id}`, node.pagination, page => loadSubPage(node.head.id, page)));
 }
 
 /* ── Create Issue Head ─────────────────────────────────────── */
@@ -203,7 +184,7 @@ function openEditSub(subId) {
   document.getElementById('editSubId').value        = foundSub.id;
   document.getElementById('editSubHeadLabel').value = foundHead ? foundHead.name : (foundSub.headName || '');
   document.getElementById('editSubName').value      = foundSub.name;
-  document.getElementById('editSubDept').value      = foundSub.department;
+  setRemoteValue('editSubDept', foundSub.department);
   document.getElementById('editSubPriority').value  = foundSub.priority || 'Medium';
   document.getElementById('editSubDesc').value      = foundSub.description || '';
   openModal('modalEditSub');

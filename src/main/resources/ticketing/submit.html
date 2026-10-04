@@ -38,7 +38,8 @@
 
   /* TOP BAR */
   .topbar {
-    max-width: 700px; margin: 0 auto 28px;
+    max-width: 1800px; margin: 0 auto 24px;
+    gap: 16px; flex-wrap: wrap;
     display: flex; align-items: center; justify-content: space-between;
     position: relative; z-index: 10;
   }
@@ -338,8 +339,56 @@
   }
   .assigned-update-btn:hover { opacity: 0.85; }
   .assigned-update-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Three work areas share the desktop width. */
+  .submit-layout {
+    max-width: 1800px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1.1fr) repeat(2, minmax(0, 1fr));
+    gap: 20px; align-items: start;
+    position: relative; z-index: 10;
+  }
+  .submit-layout > section {
+    width: 100%; min-width: 0; max-width: none; margin: 0; padding: 24px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  }
+  .submit-layout .info-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .submit-layout .info-box:first-child { grid-column: 1 / -1; }
+  .submit-layout .section-header { gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+  .submit-layout .refresh-btn { flex-shrink: 0; }
+  .submit-layout .card-header { margin-bottom: 20px; }
+  .submit-layout .card-header h1 { font-size: 20px; }
+  .submit-layout .ticket-item { flex-wrap: wrap; padding: 14px; }
+  .submit-layout .assigned-card { padding: 14px; }
+  .submit-layout .assigned-card-top { flex-wrap: wrap; }
+  .submit-layout .assigned-card-top > div { min-width: 0; }
+  .submit-layout .ti-title, .submit-layout .assigned-card-title,
+  .submit-layout .assigned-card-from, .submit-layout .ib-val,
+  .submit-layout .ti-issue, .submit-layout .assigned-card-issue { overflow-wrap: anywhere; }
+  .submit-layout .form-group label { flex-wrap: wrap; gap: 4px; }
+  .submit-layout #issueSearch { width: 100%; }
+  .topbar-right, .user-pill { flex-wrap: wrap; }
+  .user-pill { min-width: 0; max-width: 100%; }
+  #userNameDisplay, #userDeptPill { overflow-wrap: anywhere; min-width: 0; }
+  .theme-toggle-btn, .user-avatar-sm { flex-shrink: 0; }
+  @media (min-width: 1100px) {
+    .submit-layout > section { max-height: calc(100dvh - 114px); overflow-y: auto; scrollbar-gutter: stable; }
+  }
+  @media (min-width: 700px) and (max-width: 1099px) {
+    .submit-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .submit-panel { grid-column: 1 / -1; }
+  }
+  @media (max-width: 699px) {
+    body { padding: 12px; }
+    .submit-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .submit-layout > section { padding: 18px; }
+    .topbar-right { width: 100%; }
+    .submit-layout .info-row { grid-template-columns: minmax(0, 1fr); }
+  }
 </style>
 <link rel="stylesheet" href="css/replies.css"/>
+<link rel="stylesheet" href="css/paging.css"/>
+<script src="js/paging.js"></script>
 </head>
 <body>
 <div class="blob blob1"></div>
@@ -364,10 +413,11 @@
   </div>
 </div>
 
+<main class="submit-layout">
 <!-- SUBMIT CARD -->
-<div class="card">
+<section class="card submit-panel" aria-labelledby="submitHeading">
   <div class="card-header">
-    <h1>📨 Submit a Support Ticket</h1>
+    <h1 id="submitHeading">📨 Submit a Support Ticket</h1>
     <p>Describe your issue and our team will get back to you as soon as possible.</p>
   </div>
 
@@ -395,6 +445,8 @@
     <!-- Issue selection (radio buttons) -->
     <div class="issue-section">
       <div class="issue-section-label">🎯 Select Issue Type</div>
+      <input type="search" id="issueSearch" aria-label="Search issue types" placeholder="Search issue types..." oninput="searchSubmitIssues()"/>
+      <div id="issueOptionsPager" class="remote-pager"></div>
       <div id="issueRadioContainer">
         <span class="issue-loading">Loading issue types for your department…</span>
       </div>
@@ -433,7 +485,7 @@
     <br/>
     <button class="submit-another-btn" onclick="resetForm()">+ Submit Another Ticket</button>
   </div>
-</div>
+</section>
 
 <!-- ASSIGNED ISSUES -->
 <section class="assigned-section" aria-labelledby="assignedHeading">
@@ -441,17 +493,20 @@
     <h3 id="assignedHeading">👤 Issues Assigned to Me <span class="assigned-count-pill" id="assignedCount">0</span></h3>
     <button class="refresh-btn" onclick="loadAssignedTickets()">↻ Refresh</button>
   </div>
+  <div id="assignedTicketPager" class="remote-pager"></div>
   <div id="assignedList" aria-live="polite"><div class="empty-tickets">Loading assigned issues...</div></div>
 </section>
 
 <!-- MY TICKETS -->
-<div class="my-tickets-section">
+<section class="my-tickets-section" aria-labelledby="myTicketsHeading">
   <div class="section-header">
-    <h3>📋 My Tickets</h3>
+    <h3 id="myTicketsHeading">📋 My Tickets</h3>
     <button class="refresh-btn" onclick="loadMyTickets()">↻ Refresh</button>
   </div>
+  <div id="myTicketPager" class="remote-pager"></div>
   <div id="ticketList"><div class="empty-tickets">Loading your tickets...</div></div>
-</div>
+</section>
+</main>
 
 <script src="js/widget-launcher.js"></script>
 <script src="js/replies.js"></script>
@@ -522,17 +577,19 @@
   renderUserInfo();
 
   /* ── Issue radio buttons ────────────────────────────────── */
-  async function loadIssueOptions(department) {
+  let myTicketPage = 1;
+  let assignedTicketPage = 1;
+  const searchSubmitIssues = debounce(() => loadIssueOptions(user?.department, 1));
+  async function loadIssueOptions(department, page = 1) {
     const container = document.getElementById('issueRadioContainer');
     try {
-      const url = department ? `${API_BASE}/api/sub-issues?department=${encodeURIComponent(department)}` : `${API_BASE}/api/sub-issues`;
-      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!res.ok) { container.innerHTML = '<span class="no-issues-msg">Could not load issue types.</span>'; return; }
-      const json = await res.json();
+      const json = await remotePage('submit-issues', '/api/sub-issues', {department, page, pageSize:20, search:document.getElementById('issueSearch')?.value.trim()});
+      if (!json) return;
+      renderRemotePager('issueOptionsPager', json.pagination, next => loadIssueOptions(department, next));
       const subIssues = json.data || [];
 
       if (!subIssues.length) {
-        container.innerHTML = '<span class="no-issues-msg">No specific issue types are set up for your department yet. Describe your issue in the fields below.</span>';
+        container.innerHTML = '<span class="no-issues-msg">No matching issue types. Change your search or describe your issue below.</span>';
         const titleInput = document.getElementById('fTitle');
         titleInput.readOnly = false;
         titleInput.classList.remove('readonly-locked');
@@ -717,16 +774,14 @@
     });
   }
 
-  async function loadMyTickets() {
+  async function loadMyTickets(page = myTicketPage) {
     const el = document.getElementById('ticketList');
     el.innerHTML = '<div class="empty-tickets">Loading...</div>';
     try {
-      const res = await fetch(`${API_BASE}/api/tickets?scope=submitted`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.status === 401) { logout(); return; }
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.message);
+      const json = await remotePage('my-tickets', '/api/tickets', {scope:'submitted', page, pageSize:10});
+      if (!json) return;
+      myTicketPage = json.pagination.page;
+      renderRemotePager('myTicketPager', json.pagination, loadMyTickets);
       const list = json.data || [];
 
       if (!list.length) {
@@ -742,9 +797,9 @@
               <div class="ti-title">${esc(t.title)}</div>
               ${t.issue ? `<div class="ti-issue">🎯 ${esc(t.issueHead||'')} › ${esc(t.issue)}</div>` : ''}
               <div class="ti-date">${formatDate(t.createdAt)}</div>
-              ${ticketReplies(t, null)}
             </div>
             <div style="flex-shrink:0">${statusBadge(t.status)}</div>
+            ${ticketReplies(t, null)}
           </div>`).join('')
       }</div>`;
 
@@ -757,18 +812,16 @@
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  async function loadAssignedTickets() {
+  async function loadAssignedTickets(page = assignedTicketPage) {
     const el = document.getElementById('assignedList');
     el.innerHTML = '<div class="empty-tickets">Loading assigned issues...</div>';
     try {
-      const res = await fetch(`${API_BASE}/api/tickets?scope=assigned`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.status === 401) { logout(); return; }
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.message);
+      const json = await remotePage('assigned-tickets', '/api/tickets', {scope:'assigned', page, pageSize:10});
+      if (!json) return;
+      assignedTicketPage = json.pagination.page;
+      renderRemotePager('assignedTicketPager', json.pagination, loadAssignedTickets);
       const list = json.data || [];
-      document.getElementById('assignedCount').textContent = list.length;
+      document.getElementById('assignedCount').textContent = json.pagination.total;
       if (!list.length) {
         el.innerHTML = '<div class="empty-tickets">No issues are assigned to you yet.</div>';
         return;

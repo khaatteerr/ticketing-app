@@ -24,62 +24,8 @@ fun Route.ticketRoutes() {
             // GET /api/tickets — Admin/Support see all; User sees own/assigned; scope=assigned|submitted
             get {
                 val principal = call.principal<JWTPrincipal>()!!
-                val role      = principal.role()
-                val uname     = principal.username()
-
-                val scopeFilter    = call.request.queryParameters["scope"] // "assigned" | "submitted" | null
-                val statusFilter   = call.request.queryParameters["status"]
-                val priorityFilter = call.request.queryParameters["priority"]
-                val categoryFilter = call.request.queryParameters["category"]
-                val assignedFilter = call.request.queryParameters["assignedTo"]
-                val search         = call.request.queryParameters["search"]
-
-                val all = when {
-                    scopeFilter == "assigned" -> {
-                        tickets.find(
-                            Ticket::assignedTo eq uname
-                        ).toList()
-                    }
-                    scopeFilter == "submitted" -> {
-                        tickets.find(Ticket::submittedBy eq uname).toList()
-                    }
-                    role in listOf("Admin", "Support Agent") -> {
-                        tickets.find().toList()
-                    }
-                    else -> {
-                        tickets.find(
-                            or(
-                                Ticket::submittedBy eq uname,
-                                Ticket::assignedTo eq uname
-                            )
-                        ).toList()
-                    }
-                }
-
-                // Resolve priority dynamically based on configured sub-issue priority
-                val subPriorities = subIssues.find().toList().associate { it.name to it.priority }
-                val resolved = all.map { t ->
-                    if (!t.issue.isNullOrBlank() && subPriorities.containsKey(t.issue)) {
-                        val configuredPri = subPriorities[t.issue]!!
-                        if (t.priority != configuredPri) t.copy(priority = configuredPri) else t
-                    } else {
-                        t
-                    }
-                }
-
-                val filtered = resolved.filter { t ->
-                    (statusFilter   == null || t.status   == statusFilter) &&
-                    (priorityFilter == null || t.priority == priorityFilter) &&
-                    (categoryFilter == null || t.category == categoryFilter) &&
-                    (assignedFilter == null || t.assignedTo == assignedFilter || t.assignedToName == assignedFilter) &&
-                    (search == null || t.title.contains(search, ignoreCase = true) ||
-                        t.ticketId.contains(search, ignoreCase = true) ||
-                        t.submittedBy.contains(search, ignoreCase = true) ||
-                        (t.assignedToName?.contains(search, ignoreCase = true) == true) ||
-                        t.assignedTo.contains(search, ignoreCase = true))
-                }.sortedByDescending { it.createdAt }
-
-                call.respond(ApiResponse(success = true, data = filtered.map { it.toPublic() }))
+                val params = call.request.queryParameters
+                call.respond(ticketPage(params, ticketAccessFilter(principal, params["scope"])))
             }
 
             // POST /api/tickets — any logged-in user creates a ticket (full form)
@@ -248,13 +194,8 @@ fun Route.ticketRoutes() {
                     return@get
                 }
 
-                val resolved = if (!ticket.issue.isNullOrBlank()) {
-                    val sub = subIssues.findOne(SubIssue::name eq ticket.issue)
-                    if (sub != null && ticket.priority != sub.priority) ticket.copy(priority = sub.priority) else ticket
-                } else {
-                    ticket
-                }
-                call.respond(ApiResponse(success = true, data = resolved.toPublic()))
+                val configured = ticket.issue?.let { subIssues.find(SubIssue::name eq it).sort(org.bson.Document("_id", 1)).limit(1).first() }
+                call.respond(ApiResponse(success = true, data = ticket.copy(priority = configured?.priority ?: ticket.priority).toPublic()))
             }
 
             // PUT /api/tickets/{id} — Admin/Support full update; Assignee can update status
@@ -429,10 +370,7 @@ fun Route.ticketRoutes() {
         // GET /api/stats — dashboard stats
         get("/api/stats") {
             val principal = call.principal<JWTPrincipal>()!!
-            val all = if (principal.role() == "User")
-                tickets.find(Ticket::submittedBy eq principal.username()).toList()
-            else
-                tickets.find().toList()
+            val counts = tickets.groupCounts("status", ticketAccessFilter(principal, null))
 
             val totalUsers = if (principal.role() == "Admin") users.countDocuments().toInt() else 0
             val totalCats  = DatabaseFactory.categories.countDocuments().toInt()
@@ -441,12 +379,12 @@ fun Route.ticketRoutes() {
             call.respond(
                 ApiResponse(
                     success = true, data = StatsResponse(
-                        total = all.size,
-                        open = all.count { it.status == "Open" },
-                        inProgress = all.count { it.status == "In Progress" },
-                        pending = all.count { it.status == "Pending" },
-                        resolved = all.count { it.status == "Resolved" },
-                        closed = all.count { it.status == "Closed" },
+                        total = counts.values.sum().toInt(),
+                        open = (counts["Open"] ?: 0).toInt(),
+                        inProgress = (counts["In Progress"] ?: 0).toInt(),
+                        pending = (counts["Pending"] ?: 0).toInt(),
+                        resolved = (counts["Resolved"] ?: 0).toInt(),
+                        closed = (counts["Closed"] ?: 0).toInt(),
                         totalUsers = totalUsers,
                         totalCategories = totalCats,
                         totalDepartments = totalDepts
@@ -461,4 +399,11 @@ private suspend fun generateTicketId(): String {
     val year  = Year.now().value
     val count = (tickets.countDocuments() + 1)
     return "TKT-$year-${count.toString().padStart(3, '0')}"
+}
+
+internal fun ticketAccessFilter(principal: JWTPrincipal, scope: String?): org.bson.conversions.Bson = when {
+    scope == "assigned" -> Filters.eq("assignedTo", principal.username())
+    scope == "submitted" -> Filters.eq("submittedBy", principal.username())
+    principal.role() in listOf("Admin", "Support Agent") -> org.bson.Document()
+    else -> Filters.or(Filters.eq("submittedBy", principal.username()), Filters.eq("assignedTo", principal.username()))
 }

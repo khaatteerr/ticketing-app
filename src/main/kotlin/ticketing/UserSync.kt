@@ -128,8 +128,7 @@ suspend fun recalculateDepartmentStats(db: CoroutineDatabase) {
     val tickets = db.getCollection<Ticket>("tickets")
     val users = db.getCollection<User>("users")
 
-    val allDepts = depts.find().toList()
-    for (d in allDepts) {
+    depts.find().toFlow().collect { d ->
         val deptPattern = "^" + Pattern.quote(d.name) + "$"
         val totalTickets = tickets.countDocuments(Filters.regex("submittedByDepartment", deptPattern, "i")).toInt()
         val activeTickets = tickets.countDocuments(

@@ -6,6 +6,8 @@
   <title>HelpDesk Pro — Departments</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
+<link rel="stylesheet" href="css/paging.css"/>
+<script src="js/paging.js"></script>
 </head>
 <body>
 
@@ -71,7 +73,7 @@
         <span class="badge badge-medium" id="totalDeptCount" style="font-size:13px;padding:4px 10px;">0</span>
       </div>
       <div style="max-width:320px;width:100%;">
-        <input type="text" id="deptSearch" placeholder="Search departments..." oninput="renderDepartments()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);outline:none;"/>
+        <input type="text" id="deptSearch" placeholder="Search departments..." oninput="searchDepartments()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);outline:none;"/>
       </div>
     </div>
 

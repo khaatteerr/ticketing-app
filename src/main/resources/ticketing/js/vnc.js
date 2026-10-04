@@ -1,3 +1,21 @@
+function useWindowsVncLauncher() {
+  try { return localStorage.getItem('hd_vnc_windows_launcher') === 'true'; }
+  catch { return false; }
+}
+
+function updateVncLaunchLink() {
+  const address = vncAddress(document.getElementById('vncIp').value);
+  if (!address) return;
+  const scheme = document.getElementById('vncWindowsLauncher').checked
+    ? 'helpdesk-vnc' : 'com.realvnc.vncviewer.connect';
+  document.getElementById('vncLaunchLink').href = `${scheme}://${address.host}`;
+}
+
+function setWindowsVncLauncher(enabled) {
+  try { localStorage.setItem('hd_vnc_windows_launcher', String(enabled)); } catch { /* Session-only preference. */ }
+  updateVncLaunchLink();
+}
+
 /** Browser-to-viewer handoff. No connection credentials are stored or passed. */
 function vncAddress(value) {
   if (typeof value !== 'string') return null;
@@ -59,10 +77,11 @@ function openTicketVnc(ticketId) {
   document.getElementById('vncTicketRef').textContent = `${ticket.ticketId} — ${ticket.title}`;
   document.getElementById('vncIp').value = address.ip;
   const primary = document.getElementById('vncLaunchLink');
-  primary.href = `com.realvnc.vncviewer.connect://${address.host}`;
+  document.getElementById('vncWindowsLauncher').checked = useWindowsVncLauncher();
+  updateVncLaunchLink();
   document.getElementById('vncStandardLink').href = `vnc://${address.host}`;
   document.getElementById('vncCopyStatus').textContent = 'Copying IP...';
-  document.getElementById('vncLaunchStatus').textContent = 'Allow your browser to open VNC if prompted. If nothing opens, use the options below.';
+  document.getElementById('vncLaunchStatus').textContent = 'Connecting to the ticket IP: allow your browser to open RealVNC if prompted. If nothing opens, use the options below.';
   openModal('vncModal');
   selectVncIp();
   // Start both operations during the user's click. Awaiting clipboard permission

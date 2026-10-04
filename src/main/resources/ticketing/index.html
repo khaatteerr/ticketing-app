@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 <link rel="stylesheet" href="css/replies.css"/>
+<link rel="stylesheet" href="css/paging.css"/>
+<script src="js/paging.js"></script>
 </head>
 <body>
 
@@ -76,11 +78,11 @@
       <div class="filters-row">
         <div class="filter-group">
           <label>Search</label>
-          <input type="text" id="searchInput" placeholder="Search ticket ID, title, user, department..." oninput="renderTable()"/>
+          <input type="text" id="searchInput" placeholder="Search ticket ID, title, user, department..." oninput="searchTickets()"/>
         </div>
         <div class="filter-group">
           <label>Priority</label>
-          <select id="filterPriority" onchange="renderTable()">
+          <select id="filterPriority" onchange="changeTicketFilters()">
             <option value="">All Priorities</option>
             <option>Urgent</option>
             <option>High</option>
@@ -90,13 +92,13 @@
         </div>
         <div class="filter-group">
           <label>Department</label>
-          <select id="filterDepartment" onchange="renderTable()">
+          <select id="filterDepartment" onchange="changeTicketFilters()">
             <option value="">All Departments</option>
           </select>
         </div>
         <div class="filter-group">
           <label>Assigned To</label>
-          <select id="filterAssigned" onchange="renderTable()">
+          <select id="filterAssigned" onchange="changeTicketFilters()">
             <option value="">All</option>
             <option value="Unassigned">Unassigned</option>
             <option value="Support Agent">Support Agent</option>
@@ -113,7 +115,7 @@
           <h3>🎫 Support Tickets</h3>
           <span style="font-size:12px;color:var(--text3)">
             Show 
-            <select class="entries-select" id="entriesCount" onchange="renderTable()">
+            <select class="entries-select" id="entriesCount" onchange="changeTicketFilters()">
               <option>10</option>
               <option>25</option>
               <option>50</option>
@@ -122,8 +124,8 @@
           </span>
         </div>
         <div class="table-actions">
-          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📄 CSV</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">📦 JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📄 CSV (this page)</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">📦 JSON (this page)</button>
           <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
           <button class="btn btn-ghost btn-sm" onclick="loadTickets()">↻ Refresh</button>
         </div>
@@ -261,7 +263,7 @@
 
       <div class="form-group" style="margin-bottom: 12px;">
         <label for="assignSearchInput">🔍 Search User</label>
-        <input type="text" id="assignSearchInput" placeholder="Search name, username, email, department..." oninput="filterAssignUsers()"/>
+        <input type="text" id="assignSearchInput" placeholder="Search name, username, email, department..." oninput="searchAssignUsers()"/>
       </div>
 
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;justify-content:space-between;">
@@ -269,6 +271,7 @@
         <span id="assignUsersCount">0 users</span>
       </div>
 
+      <div id="assignPager" class="remote-pager"></div>
       <div id="assignUsersList" class="assign-users-list">
         <div class="empty-state"><p>Loading users...</p></div>
       </div>
@@ -303,8 +306,22 @@
       <p>If no viewer is installed, <a href="https://www.realvnc.com/en/connect/download/viewer/" target="_blank" rel="noopener noreferrer">download RealVNC Viewer</a>, install it, then try again. Portable viewers may need to be opened manually.</p>
       <p>The remote PC must be reachable and running a VNC server. This page cannot confirm whether the viewer opened.</p>
     </div>
+    <details style="margin-top:14px;font-size:13px;line-height:1.6">
+      <summary style="cursor:pointer">Windows: connect using vncviewer.exe</summary>
+      <p>Run this setup once on the PC where you use the dashboard. It uses <code style="overflow-wrap:anywhere">C:\Program Files\RealVNC\VNC Viewer\vncviewer.exe</code>.</p>
+      <ol style="padding-left:20px">
+        <li><a href="downloads/Install-HelpDeskVnc.ps1" download>Download Windows launcher setup</a>.</li>
+        <li>Run the downloaded script with Windows PowerShell. If your organization blocks scripts, ask IT to deploy it.</li>
+        <li>Enable the option below, then click Connect with RealVNC. Allow the browser to open HelpDeskVncLauncher if prompted.</li>
+      </ol>
+      <p>The launcher passes the ticket IP directly to Viewer. Your normal VNC sign-in may still be required.</p>
+    </details>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:14px;font-size:13px;text-transform:none">
+      <input type="checkbox" id="vncWindowsLauncher" style="width:auto" onchange="setWindowsVncLauncher(this.checked)"/>
+      Use Windows launcher (after setup)
+    </label>
     <div class="modal-footer" style="flex-wrap:wrap">
-      <a class="btn btn-primary" id="vncLaunchLink">Open RealVNC</a>
+      <a class="btn btn-primary" id="vncLaunchLink">Connect with RealVNC</a>
       <a class="btn btn-ghost" id="vncStandardLink">Try standard VNC</a>
       <button class="btn btn-ghost" onclick="closeModal('vncModal')">Close</button>
     </div>

@@ -149,6 +149,8 @@ function setSyncingUI(isSyncing) {
 /* ── State ──────────────────────────────────────────────────── */
 let cachedAdStatus = null;
 let cachedAdUsers = [];
+let adPage = 1;
+let adMeta = {total:0};
 let currentAdTab = 'new'; // 'new' | 'all'
 
 /* ── Tab Switcher ──────────────────────────────────────────── */
@@ -181,7 +183,7 @@ function switchAdTab(tab) {
     }
   }
 
-  renderAdUsersTable();
+  adPage = 1; loadRecentAdUsers();
 }
 
 /* ── Load Recent AD Users ──────────────────────────────────── */
@@ -189,43 +191,25 @@ async function loadRecentAdUsers() {
   const tbody = document.getElementById('adUsersBody');
   if (!tbody) return;
 
-  const res = await api('/api/users');
-  const allUsers = res?.data ?? [];
-
-  // Filter for AD users sorted by creation / last synced
-  cachedAdUsers = allUsers
-    .filter(u => u.source === 'AD')
-    .sort((a, b) => (b.lastSyncedAt || 0) - (a.lastSyncedAt || 0));
-
-  renderAdUsersTable();
+  try {
+    const res = await remotePage('ad-users', '/api/users', {page:adPage, pageSize:25, source:'AD', recentSync:currentAdTab === 'new' ? 'true' : '', sort:'lastSyncedAt', order:'desc'});
+    if (!res) return;
+    cachedAdUsers = res.data; adMeta = res.pagination; adPage = adMeta.page;
+    renderRemotePager('adPager', adMeta, page => {adPage = page; loadRecentAdUsers();});
+    renderAdUsersTable();
+  } catch (error) { tbody.innerHTML = `<tr><td colspan="5">${esc(error.message)}</td></tr>`; }
 }
 
 function renderAdUsersTable() {
   const tbody = document.getElementById('adUsersBody');
   if (!tbody) return;
 
-  const lastNewUsers = cachedAdStatus?.lastNewUsers ?? [];
-  const lastSyncAt = cachedAdStatus?.lastSyncAt ?? 0;
-
-  // Determine which users are "new":
-  // 1. Explicitly recorded by the last sync (lastNewUsers), OR
-  // 2. Created at the same time as the latest sync (within 60s), OR
-  // 3. Fallback: the newest user by createdAt if sync ran
-  let newlyAddedList = [];
-  if (lastNewUsers.length > 0) {
-    const set = new Set(lastNewUsers.map(u => u.toLowerCase()));
-    newlyAddedList = cachedAdUsers.filter(u => set.has(u.username.toLowerCase()));
-  } else if (lastSyncAt > 0) {
-    newlyAddedList = cachedAdUsers.filter(u => Math.abs(u.createdAt - lastSyncAt) < 60000);
-  }
-
-  // Update counter badges
+  const newlyAddedList = currentAdTab === 'new' ? cachedAdUsers : [];
   const newCountEl = document.getElementById('newCount');
   const allCountEl = document.getElementById('allCount');
-  if (newCountEl) newCountEl.textContent = newlyAddedList.length;
-  if (allCountEl) allCountEl.textContent = cachedAdUsers.length;
-
-  const usersToDisplay = (currentAdTab === 'new') ? newlyAddedList : cachedAdUsers;
+  if (newCountEl) newCountEl.textContent = currentAdTab === 'new' ? adMeta.total : (cachedAdStatus?.lastNewUsers?.length || 0);
+  if (allCountEl) allCountEl.textContent = currentAdTab === 'all' ? adMeta.total : (cachedAdStatus?.totalAdUsers || 0);
+  const usersToDisplay = cachedAdUsers;
 
   if (usersToDisplay.length === 0) {
     if (currentAdTab === 'new') {
@@ -235,8 +219,8 @@ function renderAdUsersTable() {
             <div class="empty-state" style="padding:28px 16px;">
               <div style="font-size:24px;margin-bottom:8px;">✨</div>
               <p style="font-weight:600;margin-bottom:4px;color:var(--text1);">No new accounts added in the latest sync.</p>
-              <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">All ${cachedAdUsers.length} Active Directory accounts in cache are already up-to-date.</p>
-              <button class="btn btn-sm btn-ghost" onclick="switchAdTab('all')">View All Synced Accounts (${cachedAdUsers.length}) →</button>
+              <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">No newly added accounts were recorded for the latest sync.</p>
+              <button class="btn btn-sm btn-ghost" onclick="switchAdTab('all')">View All Synced Accounts →</button>
             </div>
           </td>
         </tr>

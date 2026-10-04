@@ -48,6 +48,7 @@ object DatabaseFactory {
 
         // Seed default categories and a local admin fallback account
         runBlocking {
+            ensureQueryIndexes()
             seedDefaults()
         }
     }
