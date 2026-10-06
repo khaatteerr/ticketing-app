@@ -29,18 +29,20 @@ If the server starts successfully, you'll see the following output:
 2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
 ```
 
-## Quick Ticket desktop window
+## Electron desktop widget
 
-Click **Quick Ticket Widget** on the dashboard or Submit Tickets page to open a
-small, resizable browser window (390 × 520). Select an issue head and sub-issue;
-the Submit button appears after a sub-issue is selected. The widget uses the
-current login and department, and creates a normal ticket with no extra message.
-After submission it shows the ticket reference and resets for the next request.
+The desktop widget is now a native Electron app with a draggable floating icon.
+Hover to open, select an issue head and sub-issue, then submit. Clicking inside
+keeps the panel open; use the minus button or Escape to collapse it. Right-click
+the icon to quit. Lists use server-side search and pages of eight records.
 
-The widget is also available at `/widget.html`. Login redirects back to it when
-needed. If the browser blocks popup windows, the launcher opens the widget as a
-normal page. Window positioning, minimizing, and staying on top are controlled by
-the browser and operating system; this is not an installed native desktop widget.
+The default server is `http://192.168.180.48:6080`, editable at sign-in. The app
+uses the existing work-account login and stores only the session token encrypted
+with the operating system. Passwords are never saved. Users sign in again when
+the session expires. The browser popup has been replaced by a desktop setup page.
+
+See [desktop-widget/README.md](desktop-widget/README.md) for Windows distribution,
+local development, and checks.
 
 ## RealVNC on Windows support PCs
 

@@ -3,3 +3,5 @@
 /build/
 /build/classes/kotlin/main/
 /build/classes/kotlin/test/
+/desktop-widget/node_modules/
+/desktop-widget/dist/

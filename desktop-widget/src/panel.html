@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; object-src 'none'"><title>Quick Ticket</title><link rel="stylesheet" href="style.css"><script defer src="panel.js"></script></head><body class="panel-body">
+<main class="panel">
+<header><div class="brand-icon">✦</div><div><span class="eyebrow">HELPDESK</span><h1>Here to help.</h1></div><button id="collapse" class="icon-button" aria-label="Collapse to floating icon" title="Collapse">−</button></header>
+<div class="content">
+<form id="loginForm" hidden>
+  <h2>A little help, one click away.</h2><p class="muted">Sign in with your work account.</p>
+  <label for="server">Ticket server</label><input id="server" type="url" required spellcheck="false" value="http://192.168.180.48:6080">
+  <label for="username">Username</label><input id="username" autocomplete="username" required placeholder="Your work username">
+  <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required placeholder="Your password">
+  <button class="primary" id="loginSubmit" type="submit">Sign in <span>→</span></button>
+</form>
+<section id="ticketView" hidden>
+  <div class="profile"><span class="avatar" id="initial"></span><div><strong id="userName"></strong><small id="department"></small></div><button id="logout" class="text-button">Sign out</button></div>
+  <div class="step-heading"><button id="back" class="icon-button" aria-label="Back to issue heads" hidden>←</button><div><span class="eyebrow" id="step">01 / ISSUE HEAD</span><h2 id="question">What needs fixing?</h2></div></div>
+  <input id="search" type="search" placeholder="Search issue heads..." aria-label="Search available issues">
+  <div id="options" class="options" aria-live="polite"></div>
+  <nav id="pager" aria-label="Issue pages"><button id="previous" class="text-button">← Previous</button><span id="pageLabel"></span><button id="next" class="text-button">Next →</button></nav>
+</section>
+<section id="success" class="success" hidden><div class="success-icon">✓</div><span class="eyebrow">YOU’RE ALL SET</span><h2>Help is on the way.</h2><p class="muted">Your ticket has been sent to the team.</p><strong id="reference"></strong><button id="another" class="primary">Submit another ticket <span>→</span></button></section>
+<p id="status" role="status" aria-live="polite"></p><button id="retry" class="text-button" hidden>Try again</button>
+</div>
+<footer><div id="selection" hidden><small>SELECTED ISSUE</small><strong id="selectedName"></strong><button id="submitTicket" class="primary">Submit ticket <span>↗</span></button></div><button id="myTickets" class="text-button" hidden>Open my tickets ↗</button><span class="footer-note">Your support team, within reach.</span></footer>
+</main></body></html>

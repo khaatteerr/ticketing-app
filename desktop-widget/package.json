@@ -1,0 +1,53 @@
+{
+  "name": "helpdesk-desktop-widget",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A floating HelpDesk ticket widget",
+  "author": "HelpDesk",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "build:win": "electron-builder --win zip --x64",
+    "build:mac": "electron-builder --mac dir",
+    "test:ui": "electron test/ui-smoke.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.helpdesk.ticketwidget",
+    "productName": "HelpDesk Widget",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "protocols": [
+      {
+        "name": "HelpDesk Widget",
+        "schemes": [
+          "helpdesk-widget"
+        ]
+      }
+    ]
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
